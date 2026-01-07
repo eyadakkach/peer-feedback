@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Peer Feedback</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 12px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 12px; box-sizing: border-box; }
+    textarea { min-height: 90px; }
+    button { cursor: pointer; }
+    .muted { color: #666; font-size: 13px; }
+    .ok { color: #0a7; }
+    .err { color: #c00; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #fafafa; }
+    .pill { display: inline-block; padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h2>Peer Feedback</h2>
+  <p class="muted">Recipients do not see rater names. HoD can see everything.</p>
+
+  <div class="card" id="authCard">
+    <h3>1) Sign in</h3>
+    <button id="loginBtn">Sign in</button>
+    <button id="logoutBtn" style="display:none;">Sign out</button>
+    <div id="authStatus" class="muted"></div>
+  </div>
+
+  <div class="card" id="submitCard" style="display:none;">
+    <h3>2) Give feedback</h3>
+
+    <div class="row">
+      <div>
+        <label>Recipient (your allowed peers)</label>
+        <select id="recipientSelect">
+          <option value="">Loading…</option>
+        </select>
+      </div>
+      <div>
+        <label>Rating (1–5)</label>
+        <select id="ratingSelect">
+          <option value="">Select…</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        </select>
+      </div>
+    </div>
+
+    <label>One strength</label>
+    <textarea id="strength"></textarea>
+
+    <label>One improvement</label>
+    <textarea id="improve"></textarea>
+
+    <button id="submitBtn">Submit</button>
+    <div id="submitMsg" class="muted"></div>
+  </div>
+
+  <div class="card" id="myFeedbackCard" style="display:none;">
+    <h3>3) My feedback (anonymous)</h3>
+    <button id="refreshMineBtn">Refresh</button>
+    <div id="myFeedback" class="muted"></div>
+  </div>
+
+  <div class="card" id="hodCard" style="display:none;">
+    <h3>4) HoD dashboard</h3>
+    <button id="refreshHodBtn">Refresh</button>
+    <div id="hodFeedback" class="muted"></div>
+  </div>
+
+<script type="module">
+  // Firebase SDK via CDN
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    collection,
+    query,
+    where,
+    getDocs,
+    addDoc,
+    serverTimestamp,
+    orderBy,
+    limit
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // 1) Paste your Firebase config here
+const firebaseConfig = {
+  apiKey: "AIzaSyCZxIgiXvpVIA10mbAfXdelZ2GAA8Zc5jQ",
+  authDomain: "peer-feedback-4de63.firebaseapp.com",
+  projectId: "peer-feedback-4de63",
+  storageBucket: "peer-feedback-4de63.firebasestorage.app",
+  messagingSenderId: "977480782634",
+  appId: "1:977480782634:web:2bf3b786ca8ab3d8e4c453"
+};
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  const $ = (id) => document.getElementById(id);
+
+  let currentUser = null;
+  let currentRole = "employee"; // default
+  let peers = []; // array of { uid, name }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
+  }
+
+  function renderTable(rows, hodMode) {
+    if (!rows.length) return `<p class="muted">No feedback found.</p>`;
+
+    const head = hodMode
+      ? `<tr><th>Time</th><th>Rater</th><th>Recipient</th><th>Rating</th><th>Strength</th><th>Improve</th></tr>`
+      : `<tr><th>Time</th><th>Rating</th><th>Strength</th><th>Improve</th></tr>`;
+
+    const body = rows.map(r => {
+      const t = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : "";
+      if (hodMode) {
+        return `<tr>
+          <td>${escapeHtml(t)}</td>
+          <td><span class="pill">${escapeHtml(r.raterUid)}</span></td>
+          <td><span class="pill">${escapeHtml(r.recipientUid)}</span></td>
+          <td>${escapeHtml(r.rating)}</td>
+          <td>${escapeHtml(r.strength)}</td>
+          <td>${escapeHtml(r.improve)}</td>
+        </tr>`;
+      }
+      return `<tr>
+        <td>${escapeHtml(t)}</td>
+        <td>${escapeHtml(r.rating)}</td>
+        <td>${escapeHtml(r.strength)}</td>
+        <td>${escapeHtml(r.improve)}</td>
+      </tr>`;
+    }).join("");
+
+    return `<table>${head}${body}</table>`;
+  }
+
+  async function ensureUserDoc(user) {
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+
+    // First time login: create as employee
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        name: user.displayName || user.email || "Unknown",
+        role: "employee"
+      });
+      return { role: "employee", name: user.displayName || user.email || "Unknown" };
+    }
+
+    return snap.data();
+  }
+
+  async function loadPeersForCurrentUser() {
+    // Query peerMap where raterUid == currentUser.uid
+    const q = query(collection(db, "peerMap"), where("raterUid", "==", currentUser.uid));
+    const snap = await getDocs(q);
+
+    const peerUids = snap.docs.map(d => d.data().peerUid);
+
+    // Load each peer user doc to show names
+    const loaded = [];
+    for (const uid of peerUids) {
+      const u = await getDoc(doc(db, "users", uid));
+      loaded.push({ uid, name: u.exists() ? u.data().name : uid });
+    }
+
+    peers = loaded;
+
+    // Populate dropdown
+    const sel = $("recipientSelect");
+    sel.innerHTML = `<option value="">Select…</option>` + peers
+      .map(p => `<option value="${escapeHtml(p.uid)}">${escapeHtml(p.name)}</option>`)
+      .join("");
+
+    if (peers.length === 0) {
+      sel.innerHTML = `<option value="">No peers assigned</option>`;
+    }
+  }
+
+  async function submitFeedback() {
+    $("submitMsg").textContent = "";
+    const recipientUid = $("recipientSelect").value;
+    const rating = parseInt($("ratingSelect").value, 10);
+    const strength = $("strength").value.trim();
+    const improve = $("improve").value.trim();
+
+    if (!recipientUid) throw new Error("Select a recipient.");
+    if (!rating || rating < 1 || rating > 5) throw new Error("Select a rating 1–5.");
+    if (!strength || !improve) throw new Error("Strength and improvement are required.");
+
+    // Write public feedback (no rater)
+    await addDoc(collection(db, "feedback_public"), {
+      recipientUid,
+      rating,
+      strength,
+      improve,
+      createdAt: serverTimestamp()
+    });
+
+    // Write private feedback (includes rater)
+    await addDoc(collection(db, "feedback_private"), {
+      raterUid: currentUser.uid,
+      recipientUid,
+      rating,
+      strength,
+      improve,
+      createdAt: serverTimestamp()
+    });
+
+    $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
+    $("ratingSelect").value = "";
+    $("strength").value = "";
+    $("improve").value = "";
+  }
+
+  async function loadMyFeedback() {
+    const q = query(
+      collection(db, "feedback_public"),
+      where("recipientUid", "==", currentUser.uid),
+      orderBy("createdAt", "desc"),
+      limit(50)
+    );
+    const snap = await getDocs(q);
+    const rows = snap.docs.map(d => d.data());
+    $("myFeedback").innerHTML = renderTable(rows, false);
+  }
+
+  async function loadHodFeedback() {
+    const q = query(collection(db, "feedback_private"), orderBy("createdAt", "desc"), limit(100));
+    const snap = await getDocs(q);
+    const rows = snap.docs.map(d => d.data());
+    $("hodFeedback").innerHTML = renderTable(rows, true);
+  }
+
+  $("loginBtn").addEventListener("click", async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      $("authStatus").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  $("logoutBtn").addEventListener("click", async () => {
+    await signOut(auth);
+  });
+
+  $("submitBtn").addEventListener("click", async () => {
+    try {
+      await submitFeedback();
+      await loadMyFeedback();
+    } catch (e) {
+      $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  $("refreshMineBtn").addEventListener("click", async () => {
+    await loadMyFeedback();
+  });
+
+  $("refreshHodBtn").addEventListener("click", async () => {
+    await loadHodFeedback();
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+
+    if (!user) {
+      $("authStatus").textContent = "Not signed in.";
+      $("loginBtn").style.display = "";
+      $("logoutBtn").style.display = "none";
+      $("submitCard").style.display = "none";
+      $("myFeedbackCard").style.display = "none";
+      $("hodCard").style.display = "none";
+      return;
+    }
+
+    $("loginBtn").style.display = "none";
+    $("logoutBtn").style.display = "";
+    $("authStatus").innerHTML = `<span class="ok">Signed in:</span> ${escapeHtml(user.email || user.uid)}`;
+
+    const profile = await ensureUserDoc(user);
+    currentRole = profile.role || "employee";
+
+    $("submitCard").style.display = "";
+    $("myFeedbackCard").style.display = "";
+
+    await loadPeersForCurrentUser();
+    await loadMyFeedback();
+
+    if (currentRole === "hod") {
+      $("hodCard").style.display = "";
+      await loadHodFeedback();
+    } else {
+      $("hodCard").style.display = "none";
+    }
+  });
+</script>
+</body>
+</html>
