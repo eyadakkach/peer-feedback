@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Peer Feedback</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 12px; }
@@ -22,33 +22,33 @@
 </head>
 <body>
   <h2>Peer Feedback</h2>
-  <p class="muted">Recipients do not see rater names. HoD can see everything.</p>
+  <p class="muted">Sign in with your company email (magic link). Recipients do not see rater names.</p>
 
   <div class="card" id="authCard">
     <h3>1) Sign in</h3>
-    <button id="loginBtn">Sign in</button>
+    <label>Company email</label>
+    <input id="email" placeholder="name@company.com" />
+    <button id="sendLinkBtn">Send sign-in link</button>
+
+    <div class="muted">
+      <div id="authMsg"></div>
+      <div id="signedInMsg"></div>
+    </div>
+
     <button id="logoutBtn" style="display:none;">Sign out</button>
-    <div id="authStatus" class="muted"></div>
   </div>
 
   <div class="card" id="submitCard" style="display:none;">
     <h3>2) Give feedback</h3>
 
-    <div class="row">
-      <div>
-        <label>Recipient (your allowed peers)</label>
-        <select id="recipientSelect">
-          <option value="">Loading…</option>
-        </select>
-      </div>
-      <div>
-        <label>Rating (1–5)</label>
-        <select id="ratingSelect">
-          <option value="">Select…</option>
-          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-        </select>
-      </div>
-    </div>
+    <label>Recipient (your allowed peers)</label>
+    <select id="recipient"><option value="">Loading…</option></select>
+
+    <label>Rating (1–5)</label>
+    <select id="rating">
+      <option value="">Select…</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+    </select>
 
     <label>One strength</label>
     <textarea id="strength"></textarea>
@@ -60,66 +60,130 @@
     <div id="submitMsg" class="muted"></div>
   </div>
 
-  <div class="card" id="myFeedbackCard" style="display:none;">
+  <div class="card" id="mineCard" style="display:none;">
     <h3>3) My feedback (anonymous)</h3>
-    <button id="refreshMineBtn">Refresh</button>
-    <div id="myFeedback" class="muted"></div>
+    <button id="refreshMine">Refresh</button>
+    <div id="mine"></div>
   </div>
 
   <div class="card" id="hodCard" style="display:none;">
     <h3>4) HoD dashboard</h3>
-    <button id="refreshHodBtn">Refresh</button>
-    <div id="hodFeedback" class="muted"></div>
+    <button id="refreshHod">Refresh</button>
+    <div id="hod"></div>
   </div>
 
 <script type="module">
-  // Firebase SDK via CDN
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signOut,
-    onAuthStateChanged
+    sendSignInLinkToEmail,
+    isSignInWithEmailLink,
+    signInWithEmailLink,
+    onAuthStateChanged,
+    signOut
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore,
-    doc,
-    getDoc,
-    setDoc,
-    collection,
-    query,
-    where,
-    getDocs,
-    addDoc,
-    serverTimestamp,
-    orderBy,
-    limit
+    doc, getDoc, setDoc,
+    collection, query, where, getDocs,
+    addDoc, serverTimestamp,
+    orderBy, limit
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // 1) Paste your Firebase config here
-const firebaseConfig = {
-  apiKey: "AIzaSyCZxIgiXvpVIA10mbAfXdelZ2GAA8Zc5jQ",
-  authDomain: "peer-feedback-4de63.firebaseapp.com",
-  projectId: "peer-feedback-4de63",
-  storageBucket: "peer-feedback-4de63.firebasestorage.app",
-  messagingSenderId: "977480782634",
-  appId: "1:977480782634:web:2bf3b786ca8ab3d8e4c453"
-};
+  // ====== CONFIG ======
+  const COMPANY_DOMAIN = "company.com"; // <-- change to your domain
+
+  const firebaseConfig = {
+    apiKey: "PASTE_ME",
+    authDomain: "PASTE_ME",
+    projectId: "PASTE_ME",
+    storageBucket: "PASTE_ME",
+    messagingSenderId: "PASTE_ME",
+    appId: "PASTE_ME"
+  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  const provider = new GoogleAuthProvider();
 
   const $ = (id) => document.getElementById(id);
 
-  let currentUser = null;
-  let currentRole = "employee"; // default
-  let peers = []; // array of { uid, name }
-
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
+  }
+
+  function normEmail(email) {
+    return String(email || "").trim().toLowerCase();
+  }
+
+  function setUI(signedIn, isHod = false) {
+    $("submitCard").style.display = signedIn ? "" : "none";
+    $("mineCard").style.display = signedIn ? "" : "none";
+    $("logoutBtn").style.display = signedIn ? "" : "none";
+    $("hodCard").style.display = (signedIn && isHod) ? "" : "none";
+  }
+
+  async function ensureUserDoc(user) {
+    const email = normEmail(user.email);
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+
+    // First login: create as employee
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        email,
+        name: user.email || "Unknown",
+        role: "employee"
+      });
+      return { email, role: "employee" };
+    }
+
+    return snap.data();
+  }
+
+  async function loadPeersForMe(myEmail) {
+    const q = query(collection(db, "peerMap"), where("raterEmail", "==", myEmail));
+    const snap = await getDocs(q);
+    const peers = snap.docs.map(d => d.data().peerEmail);
+
+    const sel = $("recipient");
+    if (!peers.length) {
+      sel.innerHTML = `<option value="">No peers assigned</option>`;
+      return;
+    }
+
+    sel.innerHTML = `<option value="">Select…</option>` +
+      peers.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+  }
+
+  async function submitFeedback(myEmail) {
+    $("submitMsg").textContent = "";
+    const recipientEmail = normEmail($("recipient").value);
+    const rating = parseInt($("rating").value, 10);
+    const strength = $("strength").value.trim();
+    const improve = $("improve").value.trim();
+
+    if (!recipientEmail) throw new Error("Select a recipient.");
+    if (!rating || rating < 1 || rating > 5) throw new Error("Select a rating 1–5.");
+    if (!strength || !improve) throw new Error("Strength and improvement are required.");
+    if (recipientEmail === myEmail) throw new Error("You cannot rate yourself.");
+
+    await addDoc(collection(db, "feedback_public"), {
+      recipientEmail,
+      rating,
+      strength,
+      improve,
+      createdAt: serverTimestamp()
+    });
+
+    await addDoc(collection(db, "feedback_private"), {
+      raterEmail: myEmail,
+      recipientEmail,
+      rating,
+      strength,
+      improve,
+      createdAt: serverTimestamp()
+    });
   }
 
   function renderTable(rows, hodMode) {
@@ -134,8 +198,8 @@ const firebaseConfig = {
       if (hodMode) {
         return `<tr>
           <td>${escapeHtml(t)}</td>
-          <td><span class="pill">${escapeHtml(r.raterUid)}</span></td>
-          <td><span class="pill">${escapeHtml(r.recipientUid)}</span></td>
+          <td><span class="pill">${escapeHtml(r.raterEmail)}</span></td>
+          <td><span class="pill">${escapeHtml(r.recipientEmail)}</span></td>
           <td>${escapeHtml(r.rating)}</td>
           <td>${escapeHtml(r.strength)}</td>
           <td>${escapeHtml(r.improve)}</td>
@@ -152,165 +216,106 @@ const firebaseConfig = {
     return `<table>${head}${body}</table>`;
   }
 
-  async function ensureUserDoc(user) {
-    const ref = doc(db, "users", user.uid);
-    const snap = await getDoc(ref);
-
-    // First time login: create as employee
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        name: user.displayName || user.email || "Unknown",
-        role: "employee"
-      });
-      return { role: "employee", name: user.displayName || user.email || "Unknown" };
-    }
-
-    return snap.data();
-  }
-
-  async function loadPeersForCurrentUser() {
-    // Query peerMap where raterUid == currentUser.uid
-    const q = query(collection(db, "peerMap"), where("raterUid", "==", currentUser.uid));
-    const snap = await getDocs(q);
-
-    const peerUids = snap.docs.map(d => d.data().peerUid);
-
-    // Load each peer user doc to show names
-    const loaded = [];
-    for (const uid of peerUids) {
-      const u = await getDoc(doc(db, "users", uid));
-      loaded.push({ uid, name: u.exists() ? u.data().name : uid });
-    }
-
-    peers = loaded;
-
-    // Populate dropdown
-    const sel = $("recipientSelect");
-    sel.innerHTML = `<option value="">Select…</option>` + peers
-      .map(p => `<option value="${escapeHtml(p.uid)}">${escapeHtml(p.name)}</option>`)
-      .join("");
-
-    if (peers.length === 0) {
-      sel.innerHTML = `<option value="">No peers assigned</option>`;
-    }
-  }
-
-  async function submitFeedback() {
-    $("submitMsg").textContent = "";
-    const recipientUid = $("recipientSelect").value;
-    const rating = parseInt($("ratingSelect").value, 10);
-    const strength = $("strength").value.trim();
-    const improve = $("improve").value.trim();
-
-    if (!recipientUid) throw new Error("Select a recipient.");
-    if (!rating || rating < 1 || rating > 5) throw new Error("Select a rating 1–5.");
-    if (!strength || !improve) throw new Error("Strength and improvement are required.");
-
-    // Write public feedback (no rater)
-    await addDoc(collection(db, "feedback_public"), {
-      recipientUid,
-      rating,
-      strength,
-      improve,
-      createdAt: serverTimestamp()
-    });
-
-    // Write private feedback (includes rater)
-    await addDoc(collection(db, "feedback_private"), {
-      raterUid: currentUser.uid,
-      recipientUid,
-      rating,
-      strength,
-      improve,
-      createdAt: serverTimestamp()
-    });
-
-    $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
-    $("ratingSelect").value = "";
-    $("strength").value = "";
-    $("improve").value = "";
-  }
-
-  async function loadMyFeedback() {
+  async function loadMyFeedback(myEmail) {
     const q = query(
       collection(db, "feedback_public"),
-      where("recipientUid", "==", currentUser.uid),
+      where("recipientEmail", "==", myEmail),
       orderBy("createdAt", "desc"),
       limit(50)
     );
     const snap = await getDocs(q);
-    const rows = snap.docs.map(d => d.data());
-    $("myFeedback").innerHTML = renderTable(rows, false);
+    $("mine").innerHTML = renderTable(snap.docs.map(d => d.data()), false);
   }
 
   async function loadHodFeedback() {
-    const q = query(collection(db, "feedback_private"), orderBy("createdAt", "desc"), limit(100));
+    const q = query(collection(db, "feedback_private"), orderBy("createdAt", "desc"), limit(200));
     const snap = await getDocs(q);
-    const rows = snap.docs.map(d => d.data());
-    $("hodFeedback").innerHTML = renderTable(rows, true);
+    $("hod").innerHTML = renderTable(snap.docs.map(d => d.data()), true);
   }
 
-  $("loginBtn").addEventListener("click", async () => {
+  // ====== EMAIL LINK SIGN-IN FLOW ======
+
+  $("sendLinkBtn").addEventListener("click", async () => {
+    $("authMsg").textContent = "";
+    const email = normEmail($("email").value);
+
+    if (!email.endsWith("@" + COMPANY_DOMAIN)) {
+      $("authMsg").innerHTML = `<span class="err">Use your @${escapeHtml(COMPANY_DOMAIN)} email.</span>`;
+      return;
+    }
+
+    const actionCodeSettings = {
+      url: window.location.href.split("#")[0], // current page
+      handleCodeInApp: true
+    };
+
     try {
-      await signInWithPopup(auth, provider);
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      localStorage.setItem("emailForSignIn", email);
+      $("authMsg").innerHTML = `<span class="ok">Link sent.</span> Check your email and open the link on this device.`;
     } catch (e) {
-      $("authStatus").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+      $("authMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
     }
   });
+
+  // If this page is opened with the email sign-in link, complete sign-in
+  (async function completeEmailLinkSignIn() {
+    if (!isSignInWithEmailLink(auth, window.location.href)) return;
+
+    let email = localStorage.getItem("emailForSignIn");
+    if (!email) {
+      // fallback prompt (simple)
+      email = normEmail(prompt("Confirm your email to complete sign-in:") || "");
+    }
+
+    try {
+      await signInWithEmailLink(auth, email, window.location.href);
+      localStorage.removeItem("emailForSignIn");
+      $("authMsg").innerHTML = `<span class="ok">Signed in.</span>`;
+    } catch (e) {
+      $("authMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  })();
 
   $("logoutBtn").addEventListener("click", async () => {
     await signOut(auth);
   });
 
-  $("submitBtn").addEventListener("click", async () => {
-    try {
-      await submitFeedback();
-      await loadMyFeedback();
-    } catch (e) {
-      $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
-    }
-  });
-
-  $("refreshMineBtn").addEventListener("click", async () => {
-    await loadMyFeedback();
-  });
-
-  $("refreshHodBtn").addEventListener("click", async () => {
-    await loadHodFeedback();
-  });
-
   onAuthStateChanged(auth, async (user) => {
-    currentUser = user;
-
     if (!user) {
-      $("authStatus").textContent = "Not signed in.";
-      $("loginBtn").style.display = "";
-      $("logoutBtn").style.display = "none";
-      $("submitCard").style.display = "none";
-      $("myFeedbackCard").style.display = "none";
-      $("hodCard").style.display = "none";
+      $("signedInMsg").textContent = "Not signed in.";
+      setUI(false);
       return;
     }
 
-    $("loginBtn").style.display = "none";
-    $("logoutBtn").style.display = "";
-    $("authStatus").innerHTML = `<span class="ok">Signed in:</span> ${escapeHtml(user.email || user.uid)}`;
-
     const profile = await ensureUserDoc(user);
-    currentRole = profile.role || "employee";
+    const myEmail = normEmail(user.email);
+    const role = profile.role || "employee";
+    const hod = role === "hod";
 
-    $("submitCard").style.display = "";
-    $("myFeedbackCard").style.display = "";
+    $("signedInMsg").innerHTML = `<span class="ok">Signed in:</span> ${escapeHtml(myEmail)} (${escapeHtml(role)})`;
+    setUI(true, hod);
 
-    await loadPeersForCurrentUser();
-    await loadMyFeedback();
+    await loadPeersForMe(myEmail);
+    await loadMyFeedback(myEmail);
+    if (hod) await loadHodFeedback();
 
-    if (currentRole === "hod") {
-      $("hodCard").style.display = "";
-      await loadHodFeedback();
-    } else {
-      $("hodCard").style.display = "none";
-    }
+    // Buttons
+    $("submitBtn").onclick = async () => {
+      try {
+        await submitFeedback(myEmail);
+        $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
+        $("rating").value = "";
+        $("strength").value = "";
+        $("improve").value = "";
+        await loadMyFeedback(myEmail);
+      } catch (e) {
+        $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+      }
+    };
+
+    $("refreshMine").onclick = () => loadMyFeedback(myEmail);
+    $("refreshHod").onclick = () => loadHodFeedback();
   });
 </script>
 </body>
