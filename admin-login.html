@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Peer Feedback — Admin Login</title>
+  <style>
+    :root{
+      --bg:#f6f8fc;
+      --text:#0f172a;
+      --muted:#5b667a;
+      --border:rgba(15,23,42,.10);
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
+      --primary:#2f6bff;
+      --primary2:#2457d8;
+      --danger:#d92d4b;
+      --chip: rgba(15,23,42,.06);
+      --input: rgba(15,23,42,.04);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(47,107,255,.12), transparent 60%),
+                  radial-gradient(800px 500px at 100% 0%, rgba(15,157,116,.10), transparent 50%),
+                  var(--bg);
+    }
+    .wrap{ max-width: 680px; margin: 28px auto; padding: 0 14px; }
+    .top{
+      display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+      margin-bottom: 14px;
+    }
+    h1{ margin:0; font-size:22px; letter-spacing:.2px;}
+    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px;
+      background: rgba(217,45,75,.08); border:1px solid rgba(217,45,75,.25);
+      font-size:12px; color: var(--danger);
+      white-space:nowrap;
+      font-weight: 800;
+    }
+    .card{
+      background: rgba(255,255,255,.9);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    input{
+      width:100%; padding:11px 12px; border-radius:12px;
+      border:1px solid var(--border); background:var(--input); color:var(--text);
+      outline:none;
+    }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .btn{
+      border:1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 13px;
+      transition: transform .06s ease, box-shadow .15s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,23,42,.08); }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--primary), var(--primary2));
+      border-color: rgba(0,0,0,.05);
+      color:#fff;
+    }
+    .btn.ghost{ background: transparent; }
+    .msg{ margin-top:10px; font-size:13px; color:var(--muted); }
+    .err{ color: var(--danger); font-weight:800; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Admin login</h1>
+        <p class="sub">Enter the admin PIN to access the admin dashboard.</p>
+      </div>
+      <div class="badge">ADMIN</div>
+    </div>
+
+    <div class="card">
+      <label>Admin PIN</label>
+      <input id="adminPin" type="password" placeholder="Admin PIN"/>
+
+      <div class="actions">
+        <button class="btn primary" id="adminLoginBtn" type="button">Continue</button>
+        <button class="btn ghost" id="backBtn" type="button">Back</button>
+      </div>
+
+      <div id="msg" class="msg"></div>
+    </div>
+  </div>
+
+<script type="module">
+  import { $, escapeHtml, setAdminMode, checkAdminPin } from "./app.js";
+
+  $("backBtn").addEventListener("click", () => {
+    window.location.href = "./login.html";
+  });
+
+  $("adminLoginBtn").addEventListener("click", async () => {
+    $("msg").innerHTML = "";
+    try {
+      const pin = $("adminPin").value.trim();
+      if (!pin) throw new Error("Enter admin PIN.");
+
+      const res = await checkAdminPin(pin);
+      if (!res.ok) throw new Error(res.error);
+
+      setAdminMode(true);
+      window.location.href = "./admin.html";
+    } catch (e) {
+      $("msg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+</script>
+</body>
+</html>
