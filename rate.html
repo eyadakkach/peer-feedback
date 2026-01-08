@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Peer Feedback — Rate</title>
+  <style>
+    :root{
+      --bg:#f6f8fc;
+      --text:#0f172a;
+      --muted:#5b667a;
+      --border:rgba(15,23,42,.10);
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
+      --primary:#2f6bff;
+      --primary2:#2457d8;
+      --danger:#d92d4b;
+      --ok:#0f9d74;
+      --chip: rgba(15,23,42,.06);
+      --input: rgba(15,23,42,.04);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(47,107,255,.12), transparent 60%),
+                  radial-gradient(800px 500px at 100% 0%, rgba(15,157,116,.10), transparent 50%),
+                  var(--bg);
+    }
+    .wrap{ max-width: 1100px; margin: 28px auto; padding: 0 14px 40px; }
+    .top{
+      display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+      margin-bottom: 14px;
+    }
+    h1{ margin:0; font-size:22px; letter-spacing:.2px;}
+    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px;
+      background: var(--chip); border:1px solid var(--border);
+      font-size:12px; color:var(--muted);
+      white-space:nowrap;
+    }
+    .dot{ width:8px; height:8px; border-radius:999px; background: rgba(15,23,42,.25); }
+    .grid{ display:grid; grid-template-columns: 1.2fr .8fr; gap:14px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
+
+    .card{
+      background: rgba(255,255,255,.9);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    input, select, textarea{
+      width:100%; padding:11px 12px; border-radius:12px;
+      border:1px solid var(--border); background:var(--input); color:var(--text);
+      outline:none;
+    }
+    textarea{ min-height: 92px; resize: vertical; }
+    select option:disabled{ color:#888; }
+
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .btn{
+      border:1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 13px;
+      transition: transform .06s ease, box-shadow .15s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,23,42,.08); }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--primary), var(--primary2));
+      border-color: rgba(0,0,0,.05);
+      color:#fff;
+    }
+    .btn.ghost{ background: transparent; }
+    .btn.danger{ background: rgba(217,45,75,.08); border-color: rgba(217,45,75,.25); color: var(--danger); }
+    .msg{ margin-top:10px; font-size:13px; color:var(--muted); }
+    .ok{ color: var(--ok); font-weight:800; }
+    .err{ color: var(--danger); font-weight:800; }
+    .divider{ height:1px; background: rgba(15,23,42,.08); margin: 14px 0; }
+    .small{ font-size:12px; color:var(--muted); line-height:1.4; margin: 0 0 8px; }
+
+    .scale{
+      font-size:12px; color:var(--muted);
+      background: rgba(15,23,42,.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display:grid; gap:4px;
+      margin: 8px 0 12px;
+    }
+    .q{ margin: 14px 0 6px; font-weight:800; font-size:13px; }
+    table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow:hidden;
+      background: #fff;
+    }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(15,23,42,.08);
+      font-size: 12px;
+      vertical-align: top;
+    }
+    th{ background: rgba(15,23,42,.03); color: var(--muted); text-align:left; font-weight:800; }
+    tr:last-child td{ border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Rate peers</h1>
+        <p class="sub">One-time per peer. Already-rated peers are disabled in the dropdown.</p>
+      </div>
+      <div class="badge"><span class="dot"></span><span id="who">…</span></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3 style="margin:0 0 12px;">Give feedback</h3>
+
+        <label>Recipient (your allowed peers)</label>
+        <select id="recipient"><option value="">Loading…</option></select>
+        <div class="small" id="recipientHint"></div>
+
+        <div class="divider"></div>
+
+        <div class="scale">
+          <div><strong>Recommended scale:</strong></div>
+          <div>1 = Strongly disagree</div>
+          <div>2 = Disagree</div>
+          <div>3 = Neutral</div>
+          <div>4 = Agree</div>
+          <div>5 = Strongly agree</div>
+        </div>
+
+        <div class="q">1) Team player & collaboration</div>
+        <p class="small">Collaborates effectively with different functions and supports team success over individual wins.</p>
+        <select id="q1"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+
+        <div class="q">2) Communication & clarity</div>
+        <p class="small">Communicates ideas, decisions, and feedback clearly and at the right level for different stakeholders.</p>
+        <select id="q2"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+
+        <div class="q">3) Product & problem-solving mindset</div>
+        <p class="small">Demonstrates strong problem-solving and contributes to well-reasoned decisions.</p>
+        <select id="q3"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+
+        <div class="q">4) Technical / domain understanding (role-relative)</div>
+        <p class="small">Has solid technical, data, or domain understanding required for their role, and uses it effectively.</p>
+        <select id="q4"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+
+        <div class="q">5) Ownership & reliability</div>
+        <p class="small">Takes ownership and can be relied on to deliver quality work on time.</p>
+        <select id="q5"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+
+        <div class="q">Optional comment (not required)</div>
+        <p class="small">One short comment with specific feedback or examples.</p>
+        <textarea id="comment" placeholder="Optional…"></textarea>
+
+        <div class="actions">
+          <button class="btn primary" id="submitBtn" type="button">Submit</button>
+          <button class="btn ghost" id="refreshBtn" type="button">Refresh</button>
+        </div>
+        <div id="submitMsg" class="msg"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 12px;">My feedback (anonymous)</h3>
+        <div class="actions" style="margin-top:0;">
+          <button class="btn ghost" id="logoutBtn" type="button">Logout</button>
+        </div>
+        <div class="divider"></div>
+        <div id="mine"></div>
+        <div class="msg small">
+          If you see an “index required” error, click the Firebase link and create the index once.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  import {
+    $, escapeHtml, normEmail, safeNumber,
+    getSessionEmail, clearSessionEmail, setAdminMode,
+    getPeersForRater, getAlreadyRatedSet,
+    submitFeedback, loadMyFeedback
+  } from "./app.js";
+
+  const myEmail = normEmail(getSessionEmail());
+  if (!myEmail) {
+    window.location.href = "./login.html";
+  } else {
+    $("who").textContent = myEmail;
+  }
+
+  async function loadRecipients() {
+    const [peers, ratedSet] = await Promise.all([
+      getPeersForRater(myEmail),
+      getAlreadyRatedSet(myEmail)
+    ]);
+
+    const sel = $("recipient");
+    if (!peers.length) {
+      sel.innerHTML = `<option value="">No peers assigned</option>`;
+      $("recipientHint").textContent = "";
+      return;
+    }
+
+    const options = peers.map(p => {
+      const already = ratedSet.has(p);
+      const label = already ? `${p} (submitted)` : p;
+      return `<option value="${escapeHtml(p)}" ${already ? "disabled" : ""}>${escapeHtml(label)}</option>`;
+    }).join("");
+
+    sel.innerHTML = `<option value="">Select…</option>` + options;
+
+    const left = peers.filter(p => !ratedSet.has(p)).length;
+    $("recipientHint").textContent = left === 0
+      ? "You have already submitted feedback for all assigned peers."
+      : `${left} peer(s) available to rate. Submitted peers are disabled.`;
+  }
+
+  function renderTable(rows) {
+    if (!rows.length) return `<p class="small">No feedback found.</p>`;
+    const head = `<tr><th>Time</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Comment</th></tr>`;
+    const body = rows.map(r => {
+      const t = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : "";
+      return `<tr>
+        <td>${escapeHtml(t)}</td>
+        <td>${escapeHtml(r.q1 ?? "")}</td>
+        <td>${escapeHtml(r.q2 ?? "")}</td>
+        <td>${escapeHtml(r.q3 ?? "")}</td>
+        <td>${escapeHtml(r.q4 ?? "")}</td>
+        <td>${escapeHtml(r.q5 ?? "")}</td>
+        <td>${escapeHtml((r.comment||"").toString())}</td>
+      </tr>`;
+    }).join("");
+    return `<table>${head}${body}</table>`;
+  }
+
+  async function refreshAll() {
+    await loadRecipients();
+    const rows = await loadMyFeedback(myEmail);
+    $("mine").innerHTML = renderTable(rows);
+  }
+
+  $("submitBtn").addEventListener("click", async () => {
+    $("submitMsg").innerHTML = "";
+    try {
+      const recipientEmail = normEmail($("recipient").value);
+      const q1 = safeNumber($("q1").value);
+      const q2 = safeNumber($("q2").value);
+      const q3 = safeNumber($("q3").value);
+      const q4 = safeNumber($("q4").value);
+      const q5 = safeNumber($("q5").value);
+      const comment = $("comment").value.trim();
+
+      if (!recipientEmail) throw new Error("Select a recipient.");
+      if (recipientEmail === myEmail) throw new Error("You cannot rate yourself.");
+
+      const allQs = [q1,q2,q3,q4,q5];
+      if (allQs.some(v => v === null || v < 1 || v > 5)) {
+        throw new Error("Please answer all 5 questions (1–5).");
+      }
+
+      await submitFeedback({ raterEmail: myEmail, recipientEmail, q1,q2,q3,q4,q5, comment });
+
+      $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
+      $("q1").value = $("q2").value = $("q3").value = $("q4").value = $("q5").value = "";
+      $("comment").value = "";
+      $("recipient").value = "";
+
+      await refreshAll();
+    } catch (e) {
+      $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  $("refreshBtn").addEventListener("click", refreshAll);
+
+  $("logoutBtn").addEventListener("click", () => {
+    clearSessionEmail();
+    setAdminMode(false);
+    window.location.href = "./login.html";
+  });
+
+  await refreshAll();
+</script>
+</body>
+</html>

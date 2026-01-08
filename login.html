@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Peer Feedback — Login</title>
+  <style>
+    :root{
+      --bg:#f6f8fc;
+      --text:#0f172a;
+      --muted:#5b667a;
+      --border:rgba(15,23,42,.10);
+      --shadow: 0 10px 30px rgba(15,23,42,.08);
+      --primary:#2f6bff;
+      --primary2:#2457d8;
+      --danger:#d92d4b;
+      --ok:#0f9d74;
+      --chip: rgba(15,23,42,.06);
+      --input: rgba(15,23,42,.04);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(47,107,255,.12), transparent 60%),
+                  radial-gradient(800px 500px at 100% 0%, rgba(15,157,116,.10), transparent 50%),
+                  var(--bg);
+    }
+    .wrap{ max-width: 980px; margin: 28px auto; padding: 0 14px; }
+    .top{
+      display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+      margin-bottom: 14px;
+    }
+    h1{ margin:0; font-size:22px; letter-spacing:.2px;}
+    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px;
+      background: var(--chip); border:1px solid var(--border);
+      font-size:12px; color:var(--muted);
+      white-space:nowrap;
+    }
+    .dot{ width:8px; height:8px; border-radius:999px; background: rgba(15,23,42,.25); }
+    .card{
+      background: rgba(255,255,255,.9);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    input{
+      width:100%; padding:11px 12px; border-radius:12px;
+      border:1px solid var(--border); background:var(--input); color:var(--text);
+      outline:none;
+    }
+    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    @media (max-width: 620px){ .row{ grid-template-columns: 1fr; } }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .btn{
+      border:1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 13px;
+      transition: transform .06s ease, box-shadow .15s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,23,42,.08); }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--primary), var(--primary2));
+      border-color: rgba(0,0,0,.05);
+      color:#fff;
+    }
+    .btn.ghost{ background: transparent; }
+    .msg{ margin-top:10px; font-size:13px; color:var(--muted); }
+    .ok{ color: var(--ok); font-weight:800; }
+    .err{ color: var(--danger); font-weight:800; }
+    .divider{ height:1px; background: rgba(15,23,42,.08); margin: 14px 0; }
+    .small{ font-size:12px; color:var(--muted); line-height:1.4; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Peer Feedback</h1>
+        <p class="sub">Login with email + PIN. One-time per assigned peer. Admin is a separate page.</p>
+      </div>
+      <div class="badge"><span class="dot"></span><span>PIN-only</span></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 12px;">Login</h3>
+
+      <div class="row">
+        <div>
+          <label>Email</label>
+          <input id="email" placeholder="name@company.com"/>
+        </div>
+        <div>
+          <label>PIN</label>
+          <input id="pin" type="password" placeholder="PIN"/>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="loginBtn" type="button">Continue</button>
+      </div>
+
+      <div id="loginMsg" class="msg"></div>
+
+      <div class="divider"></div>
+
+      <div class="small"><strong>Admin</strong></div>
+      <div class="row" style="margin-top:8px;">
+        <div>
+          <label>Admin PIN</label>
+          <input id="adminPin" type="password" placeholder="Admin PIN"/>
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="btn" id="adminBtn" type="button">Go to admin</button>
+        </div>
+      </div>
+      <div id="adminMsg" class="msg"></div>
+    </div>
+  </div>
+
+<script type="module">
+  import {
+    $, normEmail, escapeHtml,
+    setSessionEmail, setAdminMode,
+    checkUserPin, checkAdminPin,
+    clearSessionEmail
+  } from "./app.js";
+
+  // Clean start for normal users
+  clearSessionEmail();
+  setAdminMode(false);
+
+  $("loginBtn").addEventListener("click", async () => {
+    $("loginMsg").innerHTML = "";
+    try {
+      const email = normEmail($("email").value);
+      const pin = $("pin").value.trim();
+      if (!email || !pin) throw new Error("Enter email and PIN.");
+
+      const res = await checkUserPin(email, pin);
+      if (!res.ok) throw new Error(res.error);
+
+      setSessionEmail(email);
+      setAdminMode(false);
+      window.location.href = "./rate.html";
+    } catch (e) {
+      $("loginMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  $("adminBtn").addEventListener("click", async () => {
+    $("adminMsg").innerHTML = "";
+    try {
+      const pin = $("adminPin").value.trim();
+      if (!pin) throw new Error("Enter admin PIN.");
+
+      const res = await checkAdminPin(pin);
+      if (!res.ok) throw new Error(res.error);
+
+      setAdminMode(true);
+      window.location.href = "./admin.html";
+    } catch (e) {
+      $("adminMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+</script>
+</body>
+</html>
