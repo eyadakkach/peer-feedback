@@ -277,6 +277,14 @@ background: radial-gradient(1200px 600px at 20% -10%, rgba(47,107,255,.12), tran
             <button class="btn ghost" id="logoutBtn" style="display:none;">Logout</button>
           </div>
           <div id="loginMsg" class="msg"></div>
+
+          <!-- 2) Add this subtle "Admin access" trigger inside the LOGIN card (under the buttons/message) -->
+<div style="display:flex; justify-content:flex-end; margin-top:8px;">
+  <button class="btn ghost" id="openAdminAccessBtn" type="button" style="padding:6px 10px; font-size:12px;">
+    Admin access
+  </button>
+</div>
+
         </div>
 
         <div class="card" id="submitCard" style="display:none;">
@@ -397,6 +405,25 @@ background: radial-gradient(1200px 600px at 20% -10%, rgba(47,107,255,.12), tran
       </div>
     </div>
   </div>
+<!-- 3) Add this Admin Access modal near the end of <body> (just before your <script type="module"> is fine) -->
+<div id="adminModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999;">
+  <div style="max-width:420px; margin:10vh auto; padding:14px; border-radius:16px; border:1px solid var(--border);
+              background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); box-shadow: var(--shadow);">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+      <div style="font-weight:700;">Admin access</div>
+      <button class="btn ghost" id="closeAdminModalBtn" type="button" style="padding:6px 10px;">Close</button>
+    </div>
+
+    <label>Admin PIN</label>
+    <input id="adminPinModal" type="password" placeholder="Admin PIN" />
+
+    <div class="actions" style="margin-top:6px;">
+      <button class="btn primary" id="unlockAdminFromModalBtn" type="button">Unlock</button>
+    </div>
+
+    <div id="adminModalMsg" class="msg"></div>
+  </div>
+</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -757,4 +784,5 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
+
 
