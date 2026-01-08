@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Peer Feedback</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 12px; }
+    body { font-family: Arial, sans-serif; max-width: 980px; margin: 24px auto; padding: 0 12px; }
     .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 12px; box-sizing: border-box; }
@@ -18,24 +18,28 @@
     th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; vertical-align: top; }
     th { background: #fafafa; }
     .pill { display: inline-block; padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   </style>
 </head>
 <body>
-  <h2>Peer Feedback</h2>
-  <p class="muted">Sign in with your company email (magic link). Recipients do not see rater names.</p>
+  <h2>Peer Feedback (Simple PIN version)</h2>
+  <p class="muted">Note: This version has no real security. Anyone with the link can access data.</p>
 
-  <div class="card" id="authCard">
-    <h3>1) Sign in</h3>
-    <label>Company email</label>
-    <input id="email" placeholder="name@company.com" />
-    <button id="sendLinkBtn">Send sign-in link</button>
-
-    <div class="muted">
-      <div id="authMsg"></div>
-      <div id="signedInMsg"></div>
+  <div class="card" id="loginCard">
+    <h3>1) Login</h3>
+    <div class="row">
+      <div>
+        <label>Your company email</label>
+        <input id="email" placeholder="name@company.com" />
+      </div>
+      <div>
+        <label>Your PIN</label>
+        <input id="pin" type="password" placeholder="PIN" />
+      </div>
     </div>
-
-    <button id="logoutBtn" style="display:none;">Sign out</button>
+    <button id="loginBtn">Login</button>
+    <button id="logoutBtn" style="display:none;">Logout</button>
+    <div id="loginMsg" class="muted"></div>
   </div>
 
   <div class="card" id="submitCard" style="display:none;">
@@ -66,44 +70,76 @@
     <div id="mine"></div>
   </div>
 
-  <div class="card" id="hodCard" style="display:none;">
-    <h3>4) HoD dashboard</h3>
-    <button id="refreshHod">Refresh</button>
-    <div id="hod"></div>
+  <div class="card" id="adminCard">
+    <h3>4) Admin (define peer mapping + view all)</h3>
+    <p class="muted">Admin mode is unlocked using the admin PIN stored in Firestore: <span class="pill">config/admin.adminPin</span></p>
+
+    <div class="row">
+      <div>
+        <label>Admin PIN</label>
+        <input id="adminPin" type="password" placeholder="Admin PIN" />
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button id="unlockAdminBtn">Unlock Admin</button>
+      </div>
+    </div>
+
+    <div id="adminArea" style="display:none;">
+      <div class="split">
+        <div class="card">
+          <h4>4A) Add peer mapping</h4>
+          <label>Rater email</label>
+          <input id="mapRater" placeholder="mehmet@company.com" />
+          <label>Peer email</label>
+          <input id="mapPeer" placeholder="tala@company.com" />
+          <button id="addMapBtn">Add mapping</button>
+          <div id="mapMsg" class="muted"></div>
+        </div>
+
+        <div class="card">
+          <h4>4B) Create / update user PIN</h4>
+          <label>User email</label>
+          <input id="pinEmail" placeholder="mehmet@company.com" />
+          <label>PIN</label>
+          <input id="pinValue" placeholder="e.g. 1357" />
+          <label>Active</label>
+          <select id="pinActive">
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+          <button id="savePinBtn">Save PIN</button>
+          <div id="pinMsg" class="muted"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>4C) HoD view (private feedback with rater)</h4>
+        <button id="refreshAllBtn">Refresh All</button>
+        <div id="all"></div>
+      </div>
+    </div>
   </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getAuth,
-    sendSignInLinkToEmail,
-    isSignInWithEmailLink,
-    signInWithEmailLink,
-    onAuthStateChanged,
-    signOut
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import {
-    getFirestore,
-    doc, getDoc, setDoc,
+    getFirestore, doc, getDoc, setDoc,
     collection, query, where, getDocs,
     addDoc, serverTimestamp,
     orderBy, limit
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // ====== CONFIG ======
-  const COMPANY_DOMAIN = "purecs.com"; // <-- change to your domain
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCZxIgiXvpVIA10mbAfXdelZ2GAA8Zc5jQ",
-  authDomain: "peer-feedback-4de63.firebaseapp.com",
-  projectId: "peer-feedback-4de63",
-  storageBucket: "peer-feedback-4de63.firebasestorage.app",
-  messagingSenderId: "977480782634",
-  appId: "1:977480782634:web:2bf3b786ca8ab3d8e4c453"
-};
+  // ====== PASTE YOUR FIREBASE CONFIG ======
+  const firebaseConfig = {
+    apiKey: "PASTE_ME",
+    authDomain: "PASTE_ME",
+    projectId: "PASTE_ME",
+    storageBucket: "PASTE_ME",
+    messagingSenderId: "PASTE_ME",
+    appId: "PASTE_ME"
+  };
 
   const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
   const db = getFirestore(app);
 
   const $ = (id) => document.getElementById(id);
@@ -116,78 +152,8 @@ const firebaseConfig = {
     return String(email || "").trim().toLowerCase();
   }
 
-  function setUI(signedIn, isHod = false) {
-    $("submitCard").style.display = signedIn ? "" : "none";
-    $("mineCard").style.display = signedIn ? "" : "none";
-    $("logoutBtn").style.display = signedIn ? "" : "none";
-    $("hodCard").style.display = (signedIn && isHod) ? "" : "none";
-  }
-
-  async function ensureUserDoc(user) {
-    const email = normEmail(user.email);
-    const ref = doc(db, "users", user.uid);
-    const snap = await getDoc(ref);
-
-    // First login: create as employee
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        email,
-        name: user.email || "Unknown",
-        role: "employee"
-      });
-      return { email, role: "employee" };
-    }
-
-    return snap.data();
-  }
-
-  async function loadPeersForMe(myEmail) {
-    const q = query(collection(db, "peerMap"), where("raterEmail", "==", myEmail));
-    const snap = await getDocs(q);
-    const peers = snap.docs.map(d => d.data().peerEmail);
-
-    const sel = $("recipient");
-    if (!peers.length) {
-      sel.innerHTML = `<option value="">No peers assigned</option>`;
-      return;
-    }
-
-    sel.innerHTML = `<option value="">Select…</option>` +
-      peers.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
-  }
-
-  async function submitFeedback(myEmail) {
-    $("submitMsg").textContent = "";
-    const recipientEmail = normEmail($("recipient").value);
-    const rating = parseInt($("rating").value, 10);
-    const strength = $("strength").value.trim();
-    const improve = $("improve").value.trim();
-
-    if (!recipientEmail) throw new Error("Select a recipient.");
-    if (!rating || rating < 1 || rating > 5) throw new Error("Select a rating 1–5.");
-    if (!strength || !improve) throw new Error("Strength and improvement are required.");
-    if (recipientEmail === myEmail) throw new Error("You cannot rate yourself.");
-
-    await addDoc(collection(db, "feedback_public"), {
-      recipientEmail,
-      rating,
-      strength,
-      improve,
-      createdAt: serverTimestamp()
-    });
-
-    await addDoc(collection(db, "feedback_private"), {
-      raterEmail: myEmail,
-      recipientEmail,
-      rating,
-      strength,
-      improve,
-      createdAt: serverTimestamp()
-    });
-  }
-
   function renderTable(rows, hodMode) {
-    if (!rows.length) return `<p class="muted">No feedback found.</p>`;
+    if (!rows || !rows.length) return `<p class="muted">No feedback found.</p>`;
 
     const head = hodMode
       ? `<tr><th>Time</th><th>Rater</th><th>Recipient</th><th>Rating</th><th>Strength</th><th>Improve</th></tr>`
@@ -216,6 +182,86 @@ const firebaseConfig = {
     return `<table>${head}${body}</table>`;
   }
 
+  // ====== SESSION (client-side only) ======
+  function setSession(email) {
+    localStorage.setItem("pf_email", email);
+  }
+  function getSessionEmail() {
+    return localStorage.getItem("pf_email");
+  }
+  function clearSession() {
+    localStorage.removeItem("pf_email");
+  }
+
+  function setLoggedInUI(on) {
+    $("logoutBtn").style.display = on ? "" : "none";
+    $("submitCard").style.display = on ? "" : "none";
+    $("mineCard").style.display = on ? "" : "none";
+  }
+
+  // ====== PIN CHECK (client-side) ======
+  async function checkPin(email, pin) {
+    const ref = doc(db, "pins", email);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return { ok: false, error: "No PIN set for this email." };
+
+    const data = snap.data();
+    if (!data.active) return { ok: false, error: "Account is disabled." };
+
+    if (String(data.pin || "") !== String(pin || "")) {
+      return { ok: false, error: "Invalid PIN." };
+    }
+    return { ok: true };
+  }
+
+  async function loadPeers(myEmail) {
+    const q = query(collection(db, "peerMap"), where("raterEmail", "==", myEmail));
+    const snap = await getDocs(q);
+    const peers = snap.docs.map(d => d.data().peerEmail);
+
+    const sel = $("recipient");
+    if (!peers.length) {
+      sel.innerHTML = `<option value="">No peers assigned</option>`;
+      return;
+    }
+    sel.innerHTML = `<option value="">Select…</option>` +
+      peers.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+  }
+
+  async function submitFeedback(myEmail) {
+    const recipientEmail = normEmail($("recipient").value);
+    const rating = parseInt($("rating").value, 10);
+    const strength = $("strength").value.trim();
+    const improve = $("improve").value.trim();
+
+    if (!recipientEmail) throw new Error("Select a recipient.");
+    if (!rating || rating < 1 || rating > 5) throw new Error("Select a rating 1–5.");
+    if (!strength || !improve) throw new Error("Strength and improvement are required.");
+    if (recipientEmail === myEmail) throw new Error("You cannot rate yourself.");
+
+    // (Optional) client-side check mapping exists (not security, just UX)
+    const mapId = `${myEmail}__${recipientEmail}`;
+    const mapSnap = await getDoc(doc(db, "peerMap", mapId));
+    if (!mapSnap.exists()) throw new Error("Not allowed to rate this peer (mapping missing).");
+
+    await addDoc(collection(db, "feedback_public"), {
+      recipientEmail,
+      rating,
+      strength,
+      improve,
+      createdAt: serverTimestamp()
+    });
+
+    await addDoc(collection(db, "feedback_private"), {
+      raterEmail: myEmail,
+      recipientEmail,
+      rating,
+      strength,
+      improve,
+      createdAt: serverTimestamp()
+    });
+  }
+
   async function loadMyFeedback(myEmail) {
     const q = query(
       collection(db, "feedback_public"),
@@ -227,97 +273,129 @@ const firebaseConfig = {
     $("mine").innerHTML = renderTable(snap.docs.map(d => d.data()), false);
   }
 
-  async function loadHodFeedback() {
+  async function loadAllPrivate() {
     const q = query(collection(db, "feedback_private"), orderBy("createdAt", "desc"), limit(200));
     const snap = await getDocs(q);
-    $("hod").innerHTML = renderTable(snap.docs.map(d => d.data()), true);
+    $("all").innerHTML = renderTable(snap.docs.map(d => d.data()), true);
   }
 
-  // ====== EMAIL LINK SIGN-IN FLOW ======
-
-  $("sendLinkBtn").addEventListener("click", async () => {
-    $("authMsg").textContent = "";
-    const email = normEmail($("email").value);
-
-    if (!email.endsWith("@" + COMPANY_DOMAIN)) {
-      $("authMsg").innerHTML = `<span class="err">Use your @${escapeHtml(COMPANY_DOMAIN)} email.</span>`;
-      return;
-    }
-
-    const actionCodeSettings = {
-      url: window.location.href.split("#")[0], // current page
-      handleCodeInApp: true
-    };
-
+  // ====== LOGIN ======
+  $("loginBtn").addEventListener("click", async () => {
+    $("loginMsg").textContent = "";
     try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      localStorage.setItem("emailForSignIn", email);
-      $("authMsg").innerHTML = `<span class="ok">Link sent.</span> Check your email and open the link on this device.`;
+      const email = normEmail($("email").value);
+      const pin = $("pin").value.trim();
+      if (!email || !pin) throw new Error("Enter email and PIN.");
+
+      const res = await checkPin(email, pin);
+      if (!res.ok) throw new Error(res.error);
+
+      setSession(email);
+      setLoggedInUI(true);
+      $("loginMsg").innerHTML = `<span class="ok">Logged in:</span> ${escapeHtml(email)}`;
+
+      await loadPeers(email);
+      await loadMyFeedback(email);
+
     } catch (e) {
-      $("authMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+      $("loginMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
     }
   });
 
-  // If this page is opened with the email sign-in link, complete sign-in
-  (async function completeEmailLinkSignIn() {
-    if (!isSignInWithEmailLink(auth, window.location.href)) return;
+  $("logoutBtn").addEventListener("click", () => {
+    clearSession();
+    setLoggedInUI(false);
+    $("loginMsg").textContent = "Logged out.";
+  });
 
-    let email = localStorage.getItem("emailForSignIn");
-    if (!email) {
-      // fallback prompt (simple)
-      email = normEmail(prompt("Confirm your email to complete sign-in:") || "");
-    }
-
+  $("submitBtn").addEventListener("click", async () => {
+    $("submitMsg").textContent = "";
     try {
-      await signInWithEmailLink(auth, email, window.location.href);
-      localStorage.removeItem("emailForSignIn");
-      $("authMsg").innerHTML = `<span class="ok">Signed in.</span>`;
+      const email = getSessionEmail();
+      if (!email) throw new Error("Login first.");
+
+      await submitFeedback(email);
+      $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
+      $("rating").value = "";
+      $("strength").value = "";
+      $("improve").value = "";
+
+      await loadMyFeedback(email);
     } catch (e) {
-      $("authMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+      $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  $("refreshMine").addEventListener("click", async () => {
+    const email = getSessionEmail();
+    if (!email) return;
+    await loadMyFeedback(email);
+  });
+
+  // ====== ADMIN UNLOCK (client-side) ======
+  $("unlockAdminBtn").addEventListener("click", async () => {
+    try {
+      const entered = $("adminPin").value.trim();
+      const snap = await getDoc(doc(db, "config", "admin"));
+      if (!snap.exists()) throw new Error("Missing config/admin doc.");
+
+      const adminPin = String(snap.data().adminPin || "");
+      if (entered !== adminPin) throw new Error("Wrong admin PIN.");
+
+      $("adminArea").style.display = "";
+      $("unlockAdminBtn").disabled = true;
+      $("adminPin").disabled = true;
+    } catch (e) {
+      alert(e.message);
+    }
+  });
+
+  $("addMapBtn").addEventListener("click", async () => {
+    $("mapMsg").textContent = "";
+    try {
+      const raterEmail = normEmail($("mapRater").value);
+      const peerEmail = normEmail($("mapPeer").value);
+      if (!raterEmail || !peerEmail) throw new Error("Enter both emails.");
+
+      const id = `${raterEmail}__${peerEmail}`;
+      await setDoc(doc(db, "peerMap", id), { raterEmail, peerEmail });
+
+      $("mapMsg").innerHTML = `<span class="ok">Mapping saved:</span> ${escapeHtml(id)}`;
+    } catch (e) {
+      $("mapMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  $("savePinBtn").addEventListener("click", async () => {
+    $("pinMsg").textContent = "";
+    try {
+      const email = normEmail($("pinEmail").value);
+      const pin = $("pinValue").value.trim();
+      const active = $("pinActive").value === "true";
+      if (!email || !pin) throw new Error("Enter email and PIN.");
+
+      await setDoc(doc(db, "pins", email), { pin, active });
+      $("pinMsg").innerHTML = `<span class="ok">PIN saved for:</span> ${escapeHtml(email)}`;
+    } catch (e) {
+      $("pinMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  $("refreshAllBtn").addEventListener("click", loadAllPrivate);
+
+  // ====== AUTO RESTORE SESSION ======
+  (async function init() {
+    const email = getSessionEmail();
+    if (email) {
+      setLoggedInUI(true);
+      $("loginMsg").innerHTML = `<span class="ok">Logged in:</span> ${escapeHtml(email)}`;
+      await loadPeers(email);
+      await loadMyFeedback(email);
+    } else {
+      setLoggedInUI(false);
+      $("loginMsg").textContent = "Not logged in.";
     }
   })();
-
-  $("logoutBtn").addEventListener("click", async () => {
-    await signOut(auth);
-  });
-
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      $("signedInMsg").textContent = "Not signed in.";
-      setUI(false);
-      return;
-    }
-
-    const profile = await ensureUserDoc(user);
-    const myEmail = normEmail(user.email);
-    const role = profile.role || "employee";
-    const hod = role === "hod";
-
-    $("signedInMsg").innerHTML = `<span class="ok">Signed in:</span> ${escapeHtml(myEmail)} (${escapeHtml(role)})`;
-    setUI(true, hod);
-
-    await loadPeersForMe(myEmail);
-    await loadMyFeedback(myEmail);
-    if (hod) await loadHodFeedback();
-
-    // Buttons
-    $("submitBtn").onclick = async () => {
-      try {
-        await submitFeedback(myEmail);
-        $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
-        $("rating").value = "";
-        $("strength").value = "";
-        $("improve").value = "";
-        await loadMyFeedback(myEmail);
-      } catch (e) {
-        $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
-      }
-    };
-
-    $("refreshMine").onclick = () => loadMyFeedback(myEmail);
-    $("refreshHod").onclick = () => loadHodFeedback();
-  });
 </script>
 </body>
 </html>
-
