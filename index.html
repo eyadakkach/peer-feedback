@@ -113,29 +113,17 @@
 
       <div id="loginMsg" class="msg"></div>
 
-      <div class="divider"></div>
-
-      <div class="small"><strong>Admin</strong></div>
-      <div class="row" style="margin-top:8px;">
-        <div>
-          <label>Admin PIN</label>
-          <input id="adminPin" type="password" placeholder="Admin PIN"/>
-        </div>
-        <div style="display:flex; align-items:flex-end;">
-          <button class="btn" id="adminBtn" type="button">Go to admin</button>
-        </div>
-      </div>
-      <div id="adminMsg" class="msg"></div>
     </div>
   </div>
 
 <script type="module">
-  import {
-    $, normEmail, escapeHtml,
-    setSessionEmail, setAdminMode,
-    checkUserPin, checkAdminPin,
-    clearSessionEmail
-  } from "./app.js";
+import {
+  $, normEmail, escapeHtml,
+  setSessionEmail, setAdminMode,
+  checkUserPin,
+  clearSessionEmail
+} from "./app.js";
+
 
   // Clean start for normal users
   clearSessionEmail();
@@ -159,22 +147,8 @@
     }
   });
 
-  $("adminBtn").addEventListener("click", async () => {
-    $("adminMsg").innerHTML = "";
-    try {
-      const pin = $("adminPin").value.trim();
-      if (!pin) throw new Error("Enter admin PIN.");
-
-      const res = await checkAdminPin(pin);
-      if (!res.ok) throw new Error(res.error);
-
-      setAdminMode(true);
-      window.location.href = "./admin.html";
-    } catch (e) {
-      $("adminMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
-    }
-  });
 </script>
 </body>
 </html>
+
 
