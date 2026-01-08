@@ -19,6 +19,10 @@
     th { background: #fafafa; }
     .pill { display: inline-block; padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; }
     .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .q { margin: 14px 0 8px; font-weight: 600; }
+    .help { margin-top: -6px; margin-bottom: 10px; }
+    .small { font-size: 12px; color:#666; }
+    .divider { height:1px; background:#eee; margin: 14px 0; }
   </style>
 </head>
 <body>
@@ -48,17 +52,55 @@
     <label>Recipient (your allowed peers)</label>
     <select id="recipient"><option value="">Loading…</option></select>
 
-    <label>Rating (1–5)</label>
-    <select id="rating">
-      <option value="">Select…</option>
+    <div class="divider"></div>
+
+    <div class="muted help">
+      <div><strong>Recommended scale (clear and safe):</strong></div>
+      <div>1 = Strongly disagree</div>
+      <div>2 = Disagree</div>
+      <div>3 = Neutral</div>
+      <div>4 = Agree</div>
+      <div>5 = Strongly agree</div>
+    </div>
+
+    <div class="q">1) Team player & collaboration</div>
+    <div class="small">This person collaborates effectively with different functions and supports team success over individual wins.</div>
+    <select id="q1">
+      <option value="">Select 1–5…</option>
       <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
     </select>
 
-    <label>One strength</label>
-    <textarea id="strength"></textarea>
+    <div class="q">2) Communication & clarity</div>
+    <div class="small">This person communicates ideas, decisions, and feedback clearly and at the right level for different stakeholders.</div>
+    <select id="q2">
+      <option value="">Select 1–5…</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+    </select>
 
-    <label>One improvement</label>
-    <textarea id="improve"></textarea>
+    <div class="q">3) Product & problem-solving mindset</div>
+    <div class="small">This person demonstrates strong problem-solving skills and contributes to making well-reasoned product or business decisions.</div>
+    <select id="q3">
+      <option value="">Select 1–5…</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+    </select>
+
+    <div class="q">4) Technical / domain understanding (role-relative)</div>
+    <div class="small">This person has a solid understanding of the technical, data, or domain aspects required for their role, and uses it effectively in their work.</div>
+    <select id="q4">
+      <option value="">Select 1–5…</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+    </select>
+
+    <div class="q">5) Ownership & reliability</div>
+    <div class="small">This person takes ownership of their responsibilities and can be relied on to deliver quality work on time.</div>
+    <select id="q5">
+      <option value="">Select 1–5…</option>
+      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+    </select>
+
+    <div class="q">Optional comment (not required)</div>
+    <div class="small">One short comment with specific feedback or examples. (Anonymous for the recipient.)</div>
+    <textarea id="comment" placeholder="Optional…"></textarea>
 
     <button id="submitBtn">Submit</button>
     <div id="submitMsg" class="muted"></div>
@@ -152,30 +194,52 @@ const firebaseConfig = {
     return String(email || "").trim().toLowerCase();
   }
 
+  function safeNumber(n) {
+    const x = parseInt(String(n), 10);
+    return Number.isFinite(x) ? x : null;
+  }
+
   function renderTable(rows, hodMode) {
     if (!rows || !rows.length) return `<p class="muted">No feedback found.</p>`;
 
     const head = hodMode
-      ? `<tr><th>Time</th><th>Rater</th><th>Recipient</th><th>Rating</th><th>Strength</th><th>Improve</th></tr>`
-      : `<tr><th>Time</th><th>Rating</th><th>Strength</th><th>Improve</th></tr>`;
+      ? `<tr>
+          <th>Time</th><th>Rater</th><th>Recipient</th>
+          <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th>
+          <th>Comment</th>
+        </tr>`
+      : `<tr>
+          <th>Time</th>
+          <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th>
+          <th>Comment</th>
+        </tr>`;
 
     const body = rows.map(r => {
       const t = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : "";
+      const comment = (r.comment || "").toString();
+
       if (hodMode) {
         return `<tr>
           <td>${escapeHtml(t)}</td>
-          <td><span class="pill">${escapeHtml(r.raterEmail)}</span></td>
-          <td><span class="pill">${escapeHtml(r.recipientEmail)}</span></td>
-          <td>${escapeHtml(r.rating)}</td>
-          <td>${escapeHtml(r.strength)}</td>
-          <td>${escapeHtml(r.improve)}</td>
+          <td><span class="pill">${escapeHtml(r.raterEmail || "")}</span></td>
+          <td><span class="pill">${escapeHtml(r.recipientEmail || "")}</span></td>
+          <td>${escapeHtml(r.q1 ?? "")}</td>
+          <td>${escapeHtml(r.q2 ?? "")}</td>
+          <td>${escapeHtml(r.q3 ?? "")}</td>
+          <td>${escapeHtml(r.q4 ?? "")}</td>
+          <td>${escapeHtml(r.q5 ?? "")}</td>
+          <td>${escapeHtml(comment)}</td>
         </tr>`;
       }
+
       return `<tr>
         <td>${escapeHtml(t)}</td>
-        <td>${escapeHtml(r.rating)}</td>
-        <td>${escapeHtml(r.strength)}</td>
-        <td>${escapeHtml(r.improve)}</td>
+        <td>${escapeHtml(r.q1 ?? "")}</td>
+        <td>${escapeHtml(r.q2 ?? "")}</td>
+        <td>${escapeHtml(r.q3 ?? "")}</td>
+        <td>${escapeHtml(r.q4 ?? "")}</td>
+        <td>${escapeHtml(r.q5 ?? "")}</td>
+        <td>${escapeHtml(comment)}</td>
       </tr>`;
     }).join("");
 
@@ -230,36 +294,45 @@ const firebaseConfig = {
 
   async function submitFeedback(myEmail) {
     const recipientEmail = normEmail($("recipient").value);
-    const rating = parseInt($("rating").value, 10);
-    const strength = $("strength").value.trim();
-    const improve = $("improve").value.trim();
+
+    const q1 = safeNumber($("q1").value);
+    const q2 = safeNumber($("q2").value);
+    const q3 = safeNumber($("q3").value);
+    const q4 = safeNumber($("q4").value);
+    const q5 = safeNumber($("q5").value);
+
+    const comment = $("comment").value.trim();
 
     if (!recipientEmail) throw new Error("Select a recipient.");
-    if (!rating || rating < 1 || rating > 5) throw new Error("Select a rating 1–5.");
-    if (!strength || !improve) throw new Error("Strength and improvement are required.");
     if (recipientEmail === myEmail) throw new Error("You cannot rate yourself.");
 
-    // (Optional) client-side check mapping exists (not security, just UX)
+    const allQs = [q1,q2,q3,q4,q5];
+    if (allQs.some(v => v === null || v < 1 || v > 5)) {
+      throw new Error("Please answer all 5 questions (1–5).");
+    }
+
+    // UX check (not security): mapping must exist
     const mapId = `${myEmail}__${recipientEmail}`;
     const mapSnap = await getDoc(doc(db, "peerMap", mapId));
     if (!mapSnap.exists()) throw new Error("Not allowed to rate this peer (mapping missing).");
 
-    await addDoc(collection(db, "feedback_public"), {
+    const payloadPublic = {
       recipientEmail,
-      rating,
-      strength,
-      improve,
+      q1, q2, q3, q4, q5,
+      comment,
       createdAt: serverTimestamp()
-    });
+    };
 
-    await addDoc(collection(db, "feedback_private"), {
+    const payloadPrivate = {
       raterEmail: myEmail,
       recipientEmail,
-      rating,
-      strength,
-      improve,
+      q1, q2, q3, q4, q5,
+      comment,
       createdAt: serverTimestamp()
-    });
+    };
+
+    await addDoc(collection(db, "feedback_public"), payloadPublic);
+    await addDoc(collection(db, "feedback_private"), payloadPrivate);
   }
 
   async function loadMyFeedback(myEmail) {
@@ -296,7 +369,6 @@ const firebaseConfig = {
 
       await loadPeers(email);
       await loadMyFeedback(email);
-
     } catch (e) {
       $("loginMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
     }
@@ -315,10 +387,14 @@ const firebaseConfig = {
       if (!email) throw new Error("Login first.");
 
       await submitFeedback(email);
+
       $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
-      $("rating").value = "";
-      $("strength").value = "";
-      $("improve").value = "";
+      $("q1").value = "";
+      $("q2").value = "";
+      $("q3").value = "";
+      $("q4").value = "";
+      $("q5").value = "";
+      $("comment").value = "";
 
       await loadMyFeedback(email);
     } catch (e) {
@@ -399,4 +475,3 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
-
