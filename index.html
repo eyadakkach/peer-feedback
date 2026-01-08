@@ -5,159 +5,394 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Peer Feedback</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 980px; margin: 24px auto; padding: 0 12px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    input, select, textarea, button { width: 100%; padding: 10px; margin: 6px 0 12px; box-sizing: border-box; }
-    textarea { min-height: 90px; }
-    button { cursor: pointer; }
-    .muted { color: #666; font-size: 13px; }
-    .ok { color: #0a7; }
-    .err { color: #c00; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; vertical-align: top; }
-    th { background: #fafafa; }
-    .pill { display: inline-block; padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; }
-    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .q { margin: 14px 0 8px; font-weight: 600; }
-    .help { margin-top: -6px; margin-bottom: 10px; }
-    .small { font-size: 12px; color:#666; }
-    .divider { height:1px; background:#eee; margin: 14px 0; }
+    :root{
+      --bg:#0b1220;
+      --panel:#0f172a;
+      --card:#111b33;
+      --card2:#0f1a33;
+      --muted:#9aa7bd;
+      --text:#e7eefc;
+      --border:rgba(255,255,255,.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --primary:#5b8cff;
+      --primary2:#4777ee;
+      --danger:#ff5b7a;
+      --ok:#33d6a6;
+      --chip: rgba(255,255,255,.08);
+      --input: rgba(255,255,255,.06);
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(91,140,255,.25), transparent 60%),
+                  radial-gradient(800px 500px at 100% 0%, rgba(51,214,166,.18), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+    }
+
+    .wrap{
+      max-width: 1100px;
+      margin: 28px auto;
+      padding: 0 14px 30px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .title{
+      margin:0;
+      font-size: 22px;
+      letter-spacing: .2px;
+    }
+    .subtitle{
+      margin:6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+      max-width: 760px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--chip);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .dot{ width:8px; height:8px; border-radius:999px; background: rgba(255,255,255,.25); }
+    .dot.ok{ background: rgba(51,214,166,.9); }
+    .dot.off{ background: rgba(255,91,122,.9); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .card h3{
+      margin:0 0 12px;
+      font-size: 15px;
+      letter-spacing: .2px;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 620px){
+      .row{ grid-template-columns: 1fr; }
+    }
+
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select, textarea{
+      width:100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--input);
+      color: var(--text);
+      outline: none;
+    }
+    textarea{ min-height: 92px; resize: vertical; }
+    input::placeholder, textarea::placeholder{ color: rgba(154,167,189,.7); }
+
+    select option{ color:#111; } /* browser dropdown text */
+    /* Disabled options show grey in most browsers automatically; this helps readability */
+    select option:disabled{ color:#888; }
+
+    .actions{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .btn{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.09); }
+    .btn:active{ transform: translateY(0px); }
+
+    .btn.primary{
+      background: linear-gradient(180deg, var(--primary), var(--primary2));
+      border-color: rgba(255,255,255,.14);
+    }
+    .btn.primary:hover{ background: linear-gradient(180deg, #6b98ff, #4f7fff); }
+
+    .btn.ghost{
+      background: transparent;
+    }
+
+    .btn.danger{
+      background: rgba(255,91,122,.12);
+      border-color: rgba(255,91,122,.25);
+      color: #ffd7df;
+    }
+
+    .msg{ margin-top: 8px; font-size: 13px; color: var(--muted); }
+    .msg .ok{ color: var(--ok); font-weight: 700; }
+    .msg .err{ color: var(--danger); font-weight: 700; }
+
+    .divider{
+      height:1px;
+      background: rgba(255,255,255,.08);
+      margin: 14px 0;
+    }
+
+    .scale{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+
+    .q{
+      margin: 14px 0 6px;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: .15px;
+    }
+    .small{
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow:hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(0,0,0,.12);
+    }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: 12px;
+      vertical-align: top;
+    }
+    th{
+      text-align:left;
+      color: var(--muted);
+      font-weight: 700;
+      background: rgba(255,255,255,.04);
+    }
+    tr:last-child td{ border-bottom: none; }
+
+    .pill{
+      display:inline-block;
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255,255,255,.05);
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .rightCol .card{ position: sticky; top: 14px; }
+    @media (max-width: 980px){
+      .rightCol .card{ position: static; }
+    }
   </style>
 </head>
 <body>
-  <h2>Peer Feedback (Simple PIN version)</h2>
-  <p class="muted">Note: This version has no real security. Anyone with the link can access data.</p>
-
-  <div class="card" id="loginCard">
-    <h3>1) Login</h3>
-    <div class="row">
+  <div class="wrap">
+    <div class="topbar">
       <div>
-        <label>Your company email</label>
-        <input id="email" placeholder="name@company.com" />
+        <h1 class="title">Peer Feedback</h1>
+        <p class="subtitle">
+          One-time per peer. Recipient does not see who submitted. Admin can define mappings and view all private entries.
+          <span class="pill">PIN-only (no security)</span>
+        </p>
       </div>
-      <div>
-        <label>Your PIN</label>
-        <input id="pin" type="password" placeholder="PIN" />
-      </div>
-    </div>
-    <button id="loginBtn">Login</button>
-    <button id="logoutBtn" style="display:none;">Logout</button>
-    <div id="loginMsg" class="muted"></div>
-  </div>
-
-  <div class="card" id="submitCard" style="display:none;">
-    <h3>2) Give feedback</h3>
-
-    <label>Recipient (your allowed peers)</label>
-    <select id="recipient"><option value="">Loading…</option></select>
-
-    <div class="divider"></div>
-
-    <div class="muted help">
-      <div><strong>Recommended scale (clear and safe):</strong></div>
-      <div>1 = Strongly disagree</div>
-      <div>2 = Disagree</div>
-      <div>3 = Neutral</div>
-      <div>4 = Agree</div>
-      <div>5 = Strongly agree</div>
-    </div>
-
-    <div class="q">1) Team player & collaboration</div>
-    <div class="small">This person collaborates effectively with different functions and supports team success over individual wins.</div>
-    <select id="q1">
-      <option value="">Select 1–5…</option>
-      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-    </select>
-
-    <div class="q">2) Communication & clarity</div>
-    <div class="small">This person communicates ideas, decisions, and feedback clearly and at the right level for different stakeholders.</div>
-    <select id="q2">
-      <option value="">Select 1–5…</option>
-      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-    </select>
-
-    <div class="q">3) Product & problem-solving mindset</div>
-    <div class="small">This person demonstrates strong problem-solving skills and contributes to making well-reasoned product or business decisions.</div>
-    <select id="q3">
-      <option value="">Select 1–5…</option>
-      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-    </select>
-
-    <div class="q">4) Technical / domain understanding (role-relative)</div>
-    <div class="small">This person has a solid understanding of the technical, data, or domain aspects required for their role, and uses it effectively in their work.</div>
-    <select id="q4">
-      <option value="">Select 1–5…</option>
-      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-    </select>
-
-    <div class="q">5) Ownership & reliability</div>
-    <div class="small">This person takes ownership of their responsibilities and can be relied on to deliver quality work on time.</div>
-    <select id="q5">
-      <option value="">Select 1–5…</option>
-      <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-    </select>
-
-    <div class="q">Optional comment (not required)</div>
-    <div class="small">One short comment with specific feedback or examples. (Anonymous for the recipient.)</div>
-    <textarea id="comment" placeholder="Optional…"></textarea>
-
-    <button id="submitBtn">Submit</button>
-    <div id="submitMsg" class="muted"></div>
-  </div>
-
-  <div class="card" id="mineCard" style="display:none;">
-    <h3>3) My feedback (anonymous)</h3>
-    <button id="refreshMine">Refresh</button>
-    <div id="mine"></div>
-  </div>
-
-  <div class="card" id="adminCard">
-    <h3>4) Admin (define peer mapping + view all)</h3>
-    <p class="muted">Admin mode is unlocked using the admin PIN stored in Firestore: <span class="pill">config/admin.adminPin</span></p>
-
-    <div class="row">
-      <div>
-        <label>Admin PIN</label>
-        <input id="adminPin" type="password" placeholder="Admin PIN" />
-      </div>
-      <div style="display:flex;align-items:flex-end;">
-        <button id="unlockAdminBtn">Unlock Admin</button>
+      <div class="badge" id="statusBadge">
+        <span class="dot off" id="statusDot"></span>
+        <span id="statusText">Not logged in</span>
       </div>
     </div>
 
-    <div id="adminArea" style="display:none;">
-      <div class="split">
-        <div class="card">
-          <h4>4A) Add peer mapping</h4>
-          <label>Rater email</label>
-          <input id="mapRater" placeholder="mehmet@company.com" />
-          <label>Peer email</label>
-          <input id="mapPeer" placeholder="tala@company.com" />
-          <button id="addMapBtn">Add mapping</button>
-          <div id="mapMsg" class="muted"></div>
+    <div class="grid">
+      <div class="leftCol">
+        <div class="card" id="loginCard">
+          <h3>Login</h3>
+          <div class="row">
+            <div>
+              <label>Your company email</label>
+              <input id="email" placeholder="name@company.com" />
+            </div>
+            <div>
+              <label>Your PIN</label>
+              <input id="pin" type="password" placeholder="PIN" />
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="loginBtn">Login</button>
+            <button class="btn ghost" id="logoutBtn" style="display:none;">Logout</button>
+          </div>
+          <div id="loginMsg" class="msg"></div>
         </div>
 
-        <div class="card">
-          <h4>4B) Create / update user PIN</h4>
-          <label>User email</label>
-          <input id="pinEmail" placeholder="mehmet@company.com" />
-          <label>PIN</label>
-          <input id="pinValue" placeholder="e.g. 1357" />
-          <label>Active</label>
-          <select id="pinActive">
-            <option value="true">true</option>
-            <option value="false">false</option>
+        <div class="card" id="submitCard" style="display:none;">
+          <h3>Give feedback</h3>
+
+          <label>Recipient (your allowed peers)</label>
+          <select id="recipient"><option value="">Loading…</option></select>
+          <div class="small" id="recipientHint"></div>
+
+          <div class="divider"></div>
+
+          <div class="scale">
+            <div><strong>Recommended scale:</strong></div>
+            <div>1 = Strongly disagree</div>
+            <div>2 = Disagree</div>
+            <div>3 = Neutral</div>
+            <div>4 = Agree</div>
+            <div>5 = Strongly agree</div>
+          </div>
+
+          <div class="q">1) Team player & collaboration</div>
+          <p class="small">Collaborates effectively with different functions and supports team success over individual wins.</p>
+          <select id="q1">
+            <option value="">Select 1–5…</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
           </select>
-          <button id="savePinBtn">Save PIN</button>
-          <div id="pinMsg" class="muted"></div>
+
+          <div class="q">2) Communication & clarity</div>
+          <p class="small">Communicates ideas, decisions, and feedback clearly and at the right level for different stakeholders.</p>
+          <select id="q2">
+            <option value="">Select 1–5…</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          </select>
+
+          <div class="q">3) Product & problem-solving mindset</div>
+          <p class="small">Demonstrates strong problem-solving and contributes to well-reasoned decisions.</p>
+          <select id="q3">
+            <option value="">Select 1–5…</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          </select>
+
+          <div class="q">4) Technical / domain understanding (role-relative)</div>
+          <p class="small">Has solid technical, data, or domain understanding required for their role, and uses it effectively.</p>
+          <select id="q4">
+            <option value="">Select 1–5…</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          </select>
+
+          <div class="q">5) Ownership & reliability</div>
+          <p class="small">Takes ownership and can be relied on to deliver quality work on time.</p>
+          <select id="q5">
+            <option value="">Select 1–5…</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          </select>
+
+          <div class="q">Optional comment (not required)</div>
+          <p class="small">One short comment with specific feedback or examples.</p>
+          <textarea id="comment" placeholder="Optional…"></textarea>
+
+          <div class="actions">
+            <button class="btn primary" id="submitBtn">Submit</button>
+            <button class="btn ghost" id="refreshMine">Refresh my feedback</button>
+          </div>
+          <div id="submitMsg" class="msg"></div>
+        </div>
+
+        <div class="card" id="mineCard" style="display:none;">
+          <h3>My feedback (anonymous)</h3>
+          <div id="mine"></div>
         </div>
       </div>
 
-      <div class="card">
-        <h4>4C) HoD view (private feedback with rater)</h4>
-        <button id="refreshAllBtn">Refresh All</button>
-        <div id="all"></div>
+      <div class="rightCol">
+        <div class="card" id="adminCard">
+          <h3>Admin</h3>
+          <p class="small">Unlock using <span class="pill">config/admin.adminPin</span></p>
+
+          <label>Admin PIN</label>
+          <input id="adminPin" type="password" placeholder="Admin PIN" />
+
+          <div class="actions">
+            <button class="btn" id="unlockAdminBtn">Unlock</button>
+            <button class="btn ghost" id="refreshAllBtn" style="display:none;">Refresh all (private)</button>
+          </div>
+
+          <div id="adminArea" style="display:none;">
+            <div class="divider"></div>
+
+            <h3 style="margin-top:0;">Mapping</h3>
+            <label>Rater email</label>
+            <input id="mapRater" placeholder="mehmet@company.com" />
+            <label>Peer email</label>
+            <input id="mapPeer" placeholder="tala@company.com" />
+            <button class="btn" id="addMapBtn">Add mapping</button>
+            <div id="mapMsg" class="msg"></div>
+
+            <div class="divider"></div>
+
+            <h3 style="margin-top:0;">User PIN</h3>
+            <label>User email</label>
+            <input id="pinEmail" placeholder="mehmet@company.com" />
+            <label>PIN</label>
+            <input id="pinValue" placeholder="e.g. 1357" />
+            <label>Active</label>
+            <select id="pinActive">
+              <option value="true">true</option>
+              <option value="false">false</option>
+            </select>
+            <button class="btn" id="savePinBtn">Save PIN</button>
+            <div id="pinMsg" class="msg"></div>
+
+            <div class="divider"></div>
+
+            <h3 style="margin-top:0;">All private feedback (with rater)</h3>
+            <div id="all"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -199,8 +434,20 @@ const firebaseConfig = {
     return Number.isFinite(x) ? x : null;
   }
 
+  function setStatus(loggedIn, email="") {
+    const dot = $("statusDot");
+    const text = $("statusText");
+    if (loggedIn) {
+      dot.classList.remove("off"); dot.classList.add("ok");
+      text.textContent = email ? `Logged in: ${email}` : "Logged in";
+    } else {
+      dot.classList.remove("ok"); dot.classList.add("off");
+      text.textContent = "Not logged in";
+    }
+  }
+
   function renderTable(rows, hodMode) {
-    if (!rows || !rows.length) return `<p class="muted">No feedback found.</p>`;
+    if (!rows || !rows.length) return `<p class="small">No feedback found.</p>`;
 
     const head = hodMode
       ? `<tr>
@@ -247,15 +494,9 @@ const firebaseConfig = {
   }
 
   // ====== SESSION (client-side only) ======
-  function setSession(email) {
-    localStorage.setItem("pf_email", email);
-  }
-  function getSessionEmail() {
-    return localStorage.getItem("pf_email");
-  }
-  function clearSession() {
-    localStorage.removeItem("pf_email");
-  }
+  function setSession(email) { localStorage.setItem("pf_email", email); }
+  function getSessionEmail() { return localStorage.getItem("pf_email"); }
+  function clearSession() { localStorage.removeItem("pf_email"); }
 
   function setLoggedInUI(on) {
     $("logoutBtn").style.display = on ? "" : "none";
@@ -271,25 +512,51 @@ const firebaseConfig = {
 
     const data = snap.data();
     if (!data.active) return { ok: false, error: "Account is disabled." };
-
-    if (String(data.pin || "") !== String(pin || "")) {
-      return { ok: false, error: "Invalid PIN." };
-    }
+    if (String(data.pin || "") !== String(pin || "")) return { ok: false, error: "Invalid PIN." };
     return { ok: true };
   }
 
-  async function loadPeers(myEmail) {
-    const q = query(collection(db, "peerMap"), where("raterEmail", "==", myEmail));
+  // ====== ONE-TIME RATING SUPPORT ======
+  async function getAlreadyRatedSet(myEmail) {
+    // All private feedback rows by this rater (no orderBy -> typically no composite index)
+    const q = query(collection(db, "feedback_private"), where("raterEmail", "==", myEmail));
     const snap = await getDocs(q);
-    const peers = snap.docs.map(d => d.data().peerEmail);
+    const set = new Set();
+    snap.forEach(d => {
+      const rec = normEmail(d.data().recipientEmail);
+      if (rec) set.add(rec);
+    });
+    return set;
+  }
+
+  async function loadPeers(myEmail) {
+    const peersQuery = query(collection(db, "peerMap"), where("raterEmail", "==", myEmail));
+    const [peersSnap, ratedSet] = await Promise.all([
+      getDocs(peersQuery),
+      getAlreadyRatedSet(myEmail)
+    ]);
+
+    const peers = peersSnap.docs.map(d => normEmail(d.data().peerEmail)).filter(Boolean);
 
     const sel = $("recipient");
     if (!peers.length) {
       sel.innerHTML = `<option value="">No peers assigned</option>`;
+      $("recipientHint").textContent = "";
       return;
     }
-    sel.innerHTML = `<option value="">Select…</option>` +
-      peers.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+
+    const options = peers.map(p => {
+      const already = ratedSet.has(p);
+      const label = already ? `${p} (submitted)` : p;
+      return `<option value="${escapeHtml(p)}" ${already ? "disabled" : ""}>${escapeHtml(label)}</option>`;
+    }).join("");
+
+    sel.innerHTML = `<option value="">Select…</option>` + options;
+
+    const left = peers.filter(p => !ratedSet.has(p)).length;
+    $("recipientHint").textContent = left === 0
+      ? "You have already submitted feedback for all assigned peers."
+      : `${left} peer(s) available to rate. Submitted peers are disabled.`;
   }
 
   async function submitFeedback(myEmail) {
@@ -311,7 +578,13 @@ const firebaseConfig = {
       throw new Error("Please answer all 5 questions (1–5).");
     }
 
-    // UX check (not security): mapping must exist
+    // One-time only check (not secure, but enforces UX)
+    const ratedSet = await getAlreadyRatedSet(myEmail);
+    if (ratedSet.has(recipientEmail)) {
+      throw new Error("You already submitted feedback for this person.");
+    }
+
+    // Mapping must exist (UX check)
     const mapId = `${myEmail}__${recipientEmail}`;
     const mapSnap = await getDoc(doc(db, "peerMap", mapId));
     if (!mapSnap.exists()) throw new Error("Not allowed to rate this peer (mapping missing).");
@@ -354,7 +627,7 @@ const firebaseConfig = {
 
   // ====== LOGIN ======
   $("loginBtn").addEventListener("click", async () => {
-    $("loginMsg").textContent = "";
+    $("loginMsg").innerHTML = "";
     try {
       const email = normEmail($("email").value);
       const pin = $("pin").value.trim();
@@ -365,23 +638,26 @@ const firebaseConfig = {
 
       setSession(email);
       setLoggedInUI(true);
-      $("loginMsg").innerHTML = `<span class="ok">Logged in:</span> ${escapeHtml(email)}`;
+      setStatus(true, email);
+      $("loginMsg").innerHTML = `<span class="ok">OK.</span>`;
 
       await loadPeers(email);
       await loadMyFeedback(email);
     } catch (e) {
       $("loginMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+      setStatus(false);
     }
   });
 
   $("logoutBtn").addEventListener("click", () => {
     clearSession();
     setLoggedInUI(false);
+    setStatus(false);
     $("loginMsg").textContent = "Logged out.";
   });
 
   $("submitBtn").addEventListener("click", async () => {
-    $("submitMsg").textContent = "";
+    $("submitMsg").innerHTML = "";
     try {
       const email = getSessionEmail();
       if (!email) throw new Error("Login first.");
@@ -396,7 +672,9 @@ const firebaseConfig = {
       $("q5").value = "";
       $("comment").value = "";
 
+      // Refresh both: my feedback + peers list (to disable the one just submitted)
       await loadMyFeedback(email);
+      await loadPeers(email);
     } catch (e) {
       $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
     }
@@ -406,6 +684,7 @@ const firebaseConfig = {
     const email = getSessionEmail();
     if (!email) return;
     await loadMyFeedback(email);
+    await loadPeers(email);
   });
 
   // ====== ADMIN UNLOCK (client-side) ======
@@ -419,6 +698,7 @@ const firebaseConfig = {
       if (entered !== adminPin) throw new Error("Wrong admin PIN.");
 
       $("adminArea").style.display = "";
+      $("refreshAllBtn").style.display = "";
       $("unlockAdminBtn").disabled = true;
       $("adminPin").disabled = true;
     } catch (e) {
@@ -427,7 +707,7 @@ const firebaseConfig = {
   });
 
   $("addMapBtn").addEventListener("click", async () => {
-    $("mapMsg").textContent = "";
+    $("mapMsg").innerHTML = "";
     try {
       const raterEmail = normEmail($("mapRater").value);
       const peerEmail = normEmail($("mapPeer").value);
@@ -435,15 +715,14 @@ const firebaseConfig = {
 
       const id = `${raterEmail}__${peerEmail}`;
       await setDoc(doc(db, "peerMap", id), { raterEmail, peerEmail });
-
-      $("mapMsg").innerHTML = `<span class="ok">Mapping saved:</span> ${escapeHtml(id)}`;
+      $("mapMsg").innerHTML = `<span class="ok">Saved:</span> <span class="pill">${escapeHtml(id)}</span>`;
     } catch (e) {
       $("mapMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
     }
   });
 
   $("savePinBtn").addEventListener("click", async () => {
-    $("pinMsg").textContent = "";
+    $("pinMsg").innerHTML = "";
     try {
       const email = normEmail($("pinEmail").value);
       const pin = $("pinValue").value.trim();
@@ -451,7 +730,7 @@ const firebaseConfig = {
       if (!email || !pin) throw new Error("Enter email and PIN.");
 
       await setDoc(doc(db, "pins", email), { pin, active });
-      $("pinMsg").innerHTML = `<span class="ok">PIN saved for:</span> ${escapeHtml(email)}`;
+      $("pinMsg").innerHTML = `<span class="ok">Saved PIN for:</span> <span class="pill">${escapeHtml(email)}</span>`;
     } catch (e) {
       $("pinMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
     }
@@ -464,12 +743,14 @@ const firebaseConfig = {
     const email = getSessionEmail();
     if (email) {
       setLoggedInUI(true);
-      $("loginMsg").innerHTML = `<span class="ok">Logged in:</span> ${escapeHtml(email)}`;
+      setStatus(true, email);
+      $("loginMsg").innerHTML = `<span class="ok">Session restored.</span>`;
       await loadPeers(email);
       await loadMyFeedback(email);
     } else {
       setLoggedInUI(false);
-      $("loginMsg").textContent = "Not logged in.";
+      setStatus(false);
+      $("loginMsg").textContent = "";
     }
   })();
 </script>
