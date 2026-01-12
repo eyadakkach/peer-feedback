@@ -287,7 +287,7 @@
           <div class="small" id="recipientHint"></div>
 
           <div class="scale">
-            <div><strong>The Rating Scale (3-point)</strong></div>
+            <div><strong>The Rating Scale</strong></div>
             <div>1 — Needs Significant Improvement (rarely demonstrates this behavior)</div>
             <div>3 — Competent (consistently demonstrates this behavior)</div>
             <div>5 — Role Model (exceptional; sets the standard for others)</div>
@@ -406,13 +406,13 @@
           <div class="focus">Stop / Start / Continue</div>
 
           <div class="focus">Stop: What is one thing this person does that hinders the team's progress or morale?</div>
-          <textarea id="q_stop" placeholder="Optional…"></textarea>
+          <textarea id="q_stop" placeholder="Required…"></textarea>
 
           <div class="focus">Start: What is one thing this person should start doing to be more effective?</div>
-          <textarea id="q_start" placeholder="Optional…"></textarea>
+          <textarea id="q_start" placeholder="Required…"></textarea>
 
           <div class="focus">Continue: What is this person’s “superpower” or greatest strength that they should keep utilizing?</div>
-          <textarea id="q_continue" placeholder="Optional…"></textarea>
+          <textarea id="q_continue" placeholder="Required…"></textarea>
 
           <div class="actions">
             <button class="btn primary" id="submitBtn" type="button">Submit</button>
@@ -745,7 +745,7 @@ const firebaseConfig = {
   function validateScores(scores) {
     const all = [];
     for (const sec of Object.values(scores)) for (const v of Object.values(sec)) all.push(v);
-    return all.every(v => Number.isFinite(v) && v >= 1 && v <= 3);
+    return all.every(v => Number.isFinite(v) && v >= 1 && v <= 5);
   }
 
   async function submitSurvey(myEmail) {
@@ -770,6 +770,11 @@ const firebaseConfig = {
       start: $("q_start").value.trim(),
       continue: $("q_continue").value.trim()
     };
+
+    if (!qualitative.stop || !qualitative.start || !qualitative.continue) {
+  throw new Error("Please fill Stop, Start, and Continue.");
+}
+
 
     const payloadPublic = {
       recipientEmail,
@@ -882,5 +887,6 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
+
 
 
