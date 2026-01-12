@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Peer Feedback — Rate</title>
+  <title>Peer Feedback — Survey</title>
   <style>
     :root{
       --bg:#f6f8fc;
@@ -27,7 +27,7 @@
                   radial-gradient(800px 500px at 100% 0%, rgba(15,157,116,.10), transparent 50%),
                   var(--bg);
     }
-    .wrap{ max-width: 1100px; margin: 28px auto; padding: 0 14px 40px; }
+    .wrap{ max-width: 1200px; margin: 28px auto; padding: 0 14px 40px; }
     .top{
       display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
       margin-bottom: 14px;
@@ -42,7 +42,7 @@
       white-space:nowrap;
     }
     .dot{ width:8px; height:8px; border-radius:999px; background: rgba(15,23,42,.25); }
-    .grid{ display:grid; grid-template-columns: 1.2fr .8fr; gap:14px; }
+    .grid{ display:grid; grid-template-columns: 1.3fr .7fr; gap:14px; }
     @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
 
     .card{
@@ -97,31 +97,63 @@
       display:grid; gap:4px;
       margin: 8px 0 12px;
     }
-    .q{ margin: 14px 0 6px; font-weight:800; font-size:13px; }
-    table{
-      width:100%;
-      border-collapse: separate;
-      border-spacing: 0;
+
+    .sectionTitle{
+      margin: 14px 0 6px;
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: .15px;
+    }
+    .question{
+      margin: 10px 0 6px;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .pill{
+      display:inline-block;
+      padding: 2px 8px;
       border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(15,23,42,.03);
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    details{
+      border: 1px solid rgba(15,23,42,.10);
       border-radius: 14px;
-      overflow:hidden;
-      background: #fff;
+      padding: 10px 12px;
+      background: rgba(15,23,42,.02);
+      margin-bottom: 10px;
     }
-    th, td{
-      padding: 10px 10px;
-      border-bottom: 1px solid rgba(15,23,42,.08);
+    summary{
+      cursor:pointer;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--text);
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      align-items:center;
+    }
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      margin-top: 10px;
       font-size: 12px;
-      vertical-align: top;
+      color: var(--muted);
     }
-    th{ background: rgba(15,23,42,.03); color: var(--muted); text-align:left; font-weight:800; }
-    tr:last-child td{ border-bottom: none; }
+    .kv b{ color: var(--text); font-weight: 800; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="top">
       <div>
-        <h1>Rate peers</h1>
+        <h1>360° Feedback Survey</h1>
         <p class="sub">One-time per peer. Already-rated peers are disabled in the dropdown.</p>
       </div>
       <div class="badge"><span class="dot"></span><span id="who">…</span></div>
@@ -135,40 +167,27 @@
         <select id="recipient"><option value="">Loading…</option></select>
         <div class="small" id="recipientHint"></div>
 
-        <div class="divider"></div>
-
         <div class="scale">
-          <div><strong>Recommended scale:</strong></div>
-          <div>1 = Strongly disagree</div>
-          <div>2 = Disagree</div>
-          <div>3 = Neutral</div>
-          <div>4 = Agree</div>
-          <div>5 = Strongly agree</div>
+          <div><strong>Scale (3-point):</strong></div>
+          <div>1 — Needs Significant Improvement</div>
+          <div>2 — Competent</div>
+          <div>3 — Role Model</div>
         </div>
 
-        <div class="q">1) Team player & collaboration</div>
-        <p class="small">Collaborates effectively with different functions and supports team success over individual wins.</p>
-        <select id="q1"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <div id="surveySections"></div>
 
-        <div class="q">2) Communication & clarity</div>
-        <p class="small">Communicates ideas, decisions, and feedback clearly and at the right level for different stakeholders.</p>
-        <select id="q2"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <div class="divider"></div>
 
-        <div class="q">3) Product & problem-solving mindset</div>
-        <p class="small">Demonstrates strong problem-solving and contributes to well-reasoned decisions.</p>
-        <select id="q3"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <div class="sectionTitle">Qualitative Feedback (Open-Ended)</div>
 
-        <div class="q">4) Technical / domain understanding (role-relative)</div>
-        <p class="small">Has solid technical, data, or domain understanding required for their role, and uses it effectively.</p>
-        <select id="q4"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <div class="question">Stop: What is one thing this person does that hinders the team's progress or morale?</div>
+        <textarea id="q_stop" placeholder="Optional…"></textarea>
 
-        <div class="q">5) Ownership & reliability</div>
-        <p class="small">Takes ownership and can be relied on to deliver quality work on time.</p>
-        <select id="q5"><option value="">Select 1–5…</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <div class="question">Start: What is one thing this person should start doing to be more effective?</div>
+        <textarea id="q_start" placeholder="Optional…"></textarea>
 
-        <div class="q">Optional comment (not required)</div>
-        <p class="small">One short comment with specific feedback or examples.</p>
-        <textarea id="comment" placeholder="Optional…"></textarea>
+        <div class="question">Continue: What is this person’s superpower or greatest strength that they should keep utilizing?</div>
+        <textarea id="q_continue" placeholder="Optional…"></textarea>
 
         <div class="actions">
           <button class="btn primary" id="submitBtn" type="button">Submit</button>
@@ -180,10 +199,13 @@
       <div class="card">
         <h3 style="margin:0 0 12px;">My feedback (anonymous)</h3>
         <div class="actions" style="margin-top:0;">
-          <button class="btn ghost" id="logoutBtn" type="button">Logout</button>
+          <button class="btn danger" id="logoutBtn" type="button">Logout</button>
         </div>
+
         <div class="divider"></div>
+
         <div id="mine"></div>
+
         <div class="msg small">
           If you see an “index required” error, click the Firebase link and create the index once.
         </div>
@@ -196,14 +218,55 @@
     $, escapeHtml, normEmail, safeNumber,
     getSessionEmail, clearSessionEmail, setAdminMode,
     getPeersForRater, getAlreadyRatedSet,
-    submitFeedback, loadMyFeedback
+    submitSurvey, loadMyFeedback,
+    SURVEY, SCALE, computeAverages
   } from "./app.js";
 
   const myEmail = normEmail(getSessionEmail());
-  if (!myEmail) {
-    window.location.href = "./login.html";
-  } else {
-    $("who").textContent = myEmail;
+  if (!myEmail) window.location.href = "./login.html";
+  $("who").textContent = myEmail;
+
+  function scaleSelectHtml(id){
+    const opts = SCALE.map(o => `<option value="${o.v}">${escapeHtml(o.label)}</option>`).join("");
+    return `
+      <select id="${escapeHtml(id)}">
+        <option value="">Select…</option>
+        ${opts}
+      </select>
+    `;
+  }
+
+  function buildSections(){
+    const root = $("surveySections");
+    root.innerHTML = "";
+
+    const sections = [
+      ["Communication", "communication"],
+      ["Collaboration & Teamwork", "collaboration"],
+      ["Reliability & Accountability", "reliability"],
+      ["Problem Solving & Quality of Work", "problemSolving"],
+      ["Professionalism & Integrity", "professionalism"],
+      ["Strategic Thinking & Business Acumen", "strategic"],
+    ];
+
+    for (const [title, key] of sections) {
+      const box = document.createElement("div");
+      box.innerHTML = `
+        <div class="divider"></div>
+        <div class="sectionTitle">${escapeHtml(title)}</div>
+      `;
+
+      const list = SURVEY[key] || [];
+      for (const q of list) {
+        const block = document.createElement("div");
+        block.innerHTML = `
+          <div class="question">${escapeHtml(q.label)}</div>
+          ${scaleSelectHtml(q.id)}
+        `;
+        box.appendChild(block);
+      }
+      root.appendChild(box);
+    }
   }
 
   async function loadRecipients() {
@@ -233,55 +296,127 @@
       : `${left} peer(s) available to rate. Submitted peers are disabled.`;
   }
 
-  function renderTable(rows) {
+  function getScore(id){
+    const v = safeNumber($(id).value);
+    return v;
+  }
+
+  function buildScoresObject(){
+    const scores = {};
+    for (const [sectionKey, arr] of Object.entries(SURVEY)) {
+      if (sectionKey === "qualitative") continue;
+      scores[sectionKey] = {};
+      for (const q of arr) scores[sectionKey][q.id] = getScore(q.id);
+    }
+    return scores;
+  }
+
+  function renderMine(rows){
     if (!rows.length) return `<p class="small">No feedback found.</p>`;
-    const head = `<tr><th>Time</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Comment</th></tr>`;
-    const body = rows.map(r => {
+
+    // Detailed first, then avg: per submission
+    return rows.map((r, idx) => {
       const t = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : "";
-      return `<tr>
-        <td>${escapeHtml(t)}</td>
-        <td>${escapeHtml(r.q1 ?? "")}</td>
-        <td>${escapeHtml(r.q2 ?? "")}</td>
-        <td>${escapeHtml(r.q3 ?? "")}</td>
-        <td>${escapeHtml(r.q4 ?? "")}</td>
-        <td>${escapeHtml(r.q5 ?? "")}</td>
-        <td>${escapeHtml((r.comment||"").toString())}</td>
-      </tr>`;
+      const { sectionAverages, overall } = computeAverages(r.scores || {});
+      const overallTxt = overall ? overall.toFixed(2) : "—";
+
+      const sectionOrder = [
+        ["Communication", "communication"],
+        ["Collaboration", "collaboration"],
+        ["Reliability", "reliability"],
+        ["Problem Solving", "problemSolving"],
+        ["Professionalism", "professionalism"],
+        ["Strategic", "strategic"],
+      ];
+
+      const sectionDetails = sectionOrder.map(([label, key]) => {
+        const sec = r.scores?.[key] || {};
+        const avg = sectionAverages[key];
+        const avgTxt = avg ? avg.toFixed(2) : "—";
+
+        // show each question with score
+        const questions = (SURVEY[key] || []).map(q => {
+          const val = sec[q.id];
+          return `
+            <div class="kv">
+              <div>${escapeHtml(q.label)}</div>
+              <div><b>${escapeHtml(val ?? "—")}</b></div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="divider"></div>
+          <div class="small"><b>${escapeHtml(label)} avg:</b> ${escapeHtml(avgTxt)}</div>
+          ${questions}
+        `;
+      }).join("");
+
+      const qual = r.qualitative || {};
+      const qualBlock = `
+        <div class="divider"></div>
+        <div class="small"><b>Stop:</b> ${escapeHtml(qual.stop || "—")}</div>
+        <div class="small"><b>Start:</b> ${escapeHtml(qual.start || "—")}</div>
+        <div class="small"><b>Continue:</b> ${escapeHtml(qual.continue || "—")}</div>
+      `;
+
+      return `
+        <details ${idx === 0 ? "open" : ""}>
+          <summary>
+            <span>Submission • ${escapeHtml(t)}</span>
+            <span class="pill">Overall avg: ${escapeHtml(overallTxt)}</span>
+          </summary>
+          ${sectionDetails}
+          ${qualBlock}
+        </details>
+      `;
     }).join("");
-    return `<table>${head}${body}</table>`;
   }
 
   async function refreshAll() {
     await loadRecipients();
     const rows = await loadMyFeedback(myEmail);
-    $("mine").innerHTML = renderTable(rows);
+    $("mine").innerHTML = renderMine(rows);
   }
 
   $("submitBtn").addEventListener("click", async () => {
     $("submitMsg").innerHTML = "";
     try {
       const recipientEmail = normEmail($("recipient").value);
-      const q1 = safeNumber($("q1").value);
-      const q2 = safeNumber($("q2").value);
-      const q3 = safeNumber($("q3").value);
-      const q4 = safeNumber($("q4").value);
-      const q5 = safeNumber($("q5").value);
-      const comment = $("comment").value.trim();
-
       if (!recipientEmail) throw new Error("Select a recipient.");
       if (recipientEmail === myEmail) throw new Error("You cannot rate yourself.");
 
-      const allQs = [q1,q2,q3,q4,q5];
-      if (allQs.some(v => v === null || v < 1 || v > 5)) {
-        throw new Error("Please answer all 5 questions (1–5).");
+      const scores = buildScoresObject();
+
+      // Validate all rating questions are answered (1..3)
+      const allVals = [];
+      for (const sec of Object.values(scores)) {
+        for (const v of Object.values(sec)) allVals.push(v);
+      }
+      if (allVals.some(v => v === null || v < 1 || v > 3)) {
+        throw new Error("Please answer all rating questions (1–3).");
       }
 
-      await submitFeedback({ raterEmail: myEmail, recipientEmail, q1,q2,q3,q4,q5, comment });
+      const qualitative = {
+        stop: $("q_stop").value.trim(),
+        start: $("q_start").value.trim(),
+        continue: $("q_continue").value.trim(),
+      };
+
+      await submitSurvey({ raterEmail: myEmail, recipientEmail, scores, qualitative });
 
       $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
-      $("q1").value = $("q2").value = $("q3").value = $("q4").value = $("q5").value = "";
-      $("comment").value = "";
+
+      // reset
       $("recipient").value = "";
+      for (const sec of Object.values(SURVEY)) {
+        for (const q of sec) {
+          if ($(q.id) && $(q.id).tagName === "SELECT") $(q.id).value = "";
+        }
+      }
+      $("q_stop").value = "";
+      $("q_start").value = "";
+      $("q_continue").value = "";
 
       await refreshAll();
     } catch (e) {
@@ -297,6 +432,8 @@
     window.location.href = "./login.html";
   });
 
+  // init
+  buildSections();
   await refreshAll();
 </script>
 </body>
