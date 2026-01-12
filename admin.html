@@ -27,7 +27,7 @@
                   radial-gradient(800px 500px at 100% 0%, rgba(15,157,116,.10), transparent 50%),
                   var(--bg);
     }
-    .wrap{ max-width: 1100px; margin: 28px auto; padding: 0 14px 40px; }
+    .wrap{ max-width: 1200px; margin: 28px auto; padding: 0 14px 40px; }
     .top{
       display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
       margin-bottom: 14px;
@@ -40,8 +40,10 @@
       background: rgba(217,45,75,.08); border:1px solid rgba(217,45,75,.25);
       font-size:12px; color: var(--danger);
       white-space:nowrap;
-      font-weight: 800;
+      font-weight: 900;
     }
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
     .card{
       background: rgba(255,255,255,.9);
       border: 1px solid var(--border);
@@ -49,8 +51,6 @@
       box-shadow: var(--shadow);
       padding: 16px;
     }
-    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
-    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
     label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
     input, select{
       width:100%; padding:11px 12px; border-radius:12px;
@@ -81,23 +81,23 @@
     .err{ color: var(--danger); font-weight:800; }
     .divider{ height:1px; background: rgba(15,23,42,.08); margin: 14px 0; }
 
-    table{
-      width:100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      border: 1px solid var(--border);
+    details{
+      border: 1px solid rgba(15,23,42,.10);
       border-radius: 14px;
-      overflow:hidden;
-      background: #fff;
+      padding: 10px 12px;
+      background: rgba(15,23,42,.02);
+      margin-bottom: 10px;
     }
-    th, td{
-      padding: 10px 10px;
-      border-bottom: 1px solid rgba(15,23,42,.08);
-      font-size: 12px;
-      vertical-align: top;
+    summary{
+      cursor:pointer;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--text);
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      align-items:center;
     }
-    th{ background: rgba(15,23,42,.03); color: var(--muted); text-align:left; font-weight:800; }
-    tr:last-child td{ border-bottom: none; }
     .pill{
       display:inline-block;
       padding: 2px 8px;
@@ -108,6 +108,17 @@
       color: var(--muted);
       white-space: nowrap;
     }
+    .kv{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px 12px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .kv b{ color: var(--text); font-weight: 800; }
+    .small{ font-size:12px; color:var(--muted); line-height:1.4; }
+    .sectionTitle{ margin: 12px 0 6px; font-weight: 900; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -115,20 +126,21 @@
     <div class="top">
       <div>
         <h1>Admin</h1>
-        <p class="sub">Manage mappings, user PINs, and view all private submissions (with rater).</p>
+        <p class="sub">Manage mappings, user PINs, and view all submissions (private includes rater).</p>
       </div>
       <div class="badge">ADMIN MODE</div>
     </div>
 
     <div class="actions" style="margin-bottom:14px;">
       <button class="btn danger" id="exitBtn" type="button">Exit admin</button>
-      <button class="btn" id="backToLoginBtn" type="button">Back to login</button>
       <button class="btn primary" id="refreshAllBtn" type="button">Refresh all</button>
     </div>
 
     <div class="grid">
       <div class="card">
-        <h3 style="margin:0 0 12px;">Add peer mapping</h3>
+        <h3 style="margin:0 0 12px;">Admin controls</h3>
+
+        <div class="sectionTitle">Add peer mapping</div>
         <label>Rater email</label>
         <input id="mapRater" placeholder="mehmet@company.com"/>
         <label>Peer email</label>
@@ -140,7 +152,7 @@
 
         <div class="divider"></div>
 
-        <h3 style="margin:0 0 12px;">Create / update user PIN</h3>
+        <div class="sectionTitle">Create / update user PIN</div>
         <label>User email</label>
         <input id="pinEmail" placeholder="mehmet@company.com"/>
         <label>PIN</label>
@@ -154,6 +166,10 @@
           <button class="btn" id="savePinBtn" type="button">Save PIN</button>
         </div>
         <div id="pinMsg" class="msg"></div>
+
+        <div class="divider"></div>
+
+        <div class="small"><b>Scale:</b> 1 = Needs Improvement, 2 = Competent, 3 = Role Model</div>
       </div>
 
       <div class="card">
@@ -168,41 +184,76 @@
     $, escapeHtml, normEmail,
     isAdminMode, setAdminMode,
     adminSavePeerMap, adminSaveUserPin,
-    loadAllPrivate
+    loadAllPrivate,
+    SURVEY, computeAverages
   } from "./app.js";
 
-  if (!isAdminMode()) {
-    // must come from login page admin PIN
-    window.location.href = "./login.html";
-  }
+  if (!isAdminMode()) window.location.href = "./admin-login.html";
 
-  function renderTable(rows) {
-    if (!rows.length) return `<p style="color:#5b667a; font-size:12px;">No submissions found.</p>`;
-    const head = `<tr>
-      <th>Time</th><th>Rater</th><th>Recipient</th>
-      <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th>
-      <th>Comment</th>
-    </tr>`;
-    const body = rows.map(r => {
-      const t = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : "";
-      return `<tr>
-        <td>${escapeHtml(t)}</td>
-        <td><span class="pill">${escapeHtml(r.raterEmail || "")}</span></td>
-        <td><span class="pill">${escapeHtml(r.recipientEmail || "")}</span></td>
-        <td>${escapeHtml(r.q1 ?? "")}</td>
-        <td>${escapeHtml(r.q2 ?? "")}</td>
-        <td>${escapeHtml(r.q3 ?? "")}</td>
-        <td>${escapeHtml(r.q4 ?? "")}</td>
-        <td>${escapeHtml(r.q5 ?? "")}</td>
-        <td>${escapeHtml((r.comment||"").toString())}</td>
-      </tr>`;
+  function renderSubmission(sub, open=false){
+    const t = sub.createdAt?.toDate ? sub.createdAt.toDate().toLocaleString() : "";
+    const { sectionAverages, overall } = computeAverages(sub.scores || {});
+    const overallTxt = overall ? overall.toFixed(2) : "—";
+
+    const sectionOrder = [
+      ["Communication", "communication"],
+      ["Collaboration", "collaboration"],
+      ["Reliability", "reliability"],
+      ["Problem Solving", "problemSolving"],
+      ["Professionalism", "professionalism"],
+      ["Strategic", "strategic"],
+    ];
+
+    const sections = sectionOrder.map(([label, key]) => {
+      const sec = sub.scores?.[key] || {};
+      const avg = sectionAverages[key];
+      const avgTxt = avg ? avg.toFixed(2) : "—";
+
+      const qs = (SURVEY[key] || []).map(q => {
+        const val = sec[q.id];
+        return `
+          <div class="kv">
+            <div>${escapeHtml(q.label)}</div>
+            <div><b>${escapeHtml(val ?? "—")}</b></div>
+          </div>
+        `;
+      }).join("");
+
+      return `
+        <div class="divider"></div>
+        <div class="sectionTitle">${escapeHtml(label)} <span class="pill">avg ${escapeHtml(avgTxt)}</span></div>
+        ${qs}
+      `;
     }).join("");
-    return `<table>${head}${body}</table>`;
+
+    const qual = sub.qualitative || {};
+    const qualBlock = `
+      <div class="divider"></div>
+      <div class="sectionTitle">Qualitative</div>
+      <div class="small"><b>Stop:</b> ${escapeHtml(qual.stop || "—")}</div>
+      <div class="small"><b>Start:</b> ${escapeHtml(qual.start || "—")}</div>
+      <div class="small"><b>Continue:</b> ${escapeHtml(qual.continue || "—")}</div>
+    `;
+
+    return `
+      <details ${open ? "open" : ""}>
+        <summary>
+          <span>${escapeHtml(t)} • <span class="pill">${escapeHtml(sub.raterEmail || "")}</span> → <span class="pill">${escapeHtml(sub.recipientEmail || "")}</span></span>
+          <span class="pill">Overall avg: ${escapeHtml(overallTxt)}</span>
+        </summary>
+        ${sections}
+        ${qualBlock}
+      </details>
+    `;
   }
 
-  async function refreshAll() {
+  async function refreshAll(){
     const rows = await loadAllPrivate();
-    $("all").innerHTML = renderTable(rows);
+    if (!rows.length) {
+      $("all").innerHTML = `<p class="small">No submissions found.</p>`;
+      return;
+    }
+    $("all").innerHTML = rows.map((r,i) => renderSubmission(r, i===0)).join("");
   }
 
   $("refreshAllBtn").addEventListener("click", refreshAll);
@@ -239,12 +290,7 @@
     window.location.href = "./admin-login.html";
   });
 
-  $("backToLoginBtn").addEventListener("click", () => {
-    window.location.href = "./admin-login.html";
-  });
-
   await refreshAll();
 </script>
 </body>
 </html>
-
