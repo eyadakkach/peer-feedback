@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Peer Feedback — Login</title>
+  <title>360° Feedback Survey</title>
+
   <style>
     :root{
       --bg:#f6f8fc;
@@ -17,49 +18,110 @@
       --ok:#0f9d74;
       --chip: rgba(15,23,42,.06);
       --input: rgba(15,23,42,.04);
+      --card: rgba(255,255,255,.92);
     }
-    *{box-sizing:border-box}
+
+    *{ box-sizing:border-box; }
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
       color:var(--text);
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(47,107,255,.12), transparent 60%),
-                  radial-gradient(800px 500px at 100% 0%, rgba(15,157,116,.10), transparent 50%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(47,107,255,.12), transparent 60%),
+        radial-gradient(800px 500px at 100% 0%, rgba(15,157,116,.10), transparent 50%),
+        var(--bg);
     }
-    .wrap{ max-width: 980px; margin: 28px auto; padding: 0 14px; }
-    .top{
-      display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+
+    .wrap{ max-width: 1150px; margin: 28px auto; padding: 0 14px 44px; }
+
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
       margin-bottom: 14px;
     }
     h1{ margin:0; font-size:22px; letter-spacing:.2px;}
-    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
+    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.45; max-width: 820px; }
+
     .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 10px; border-radius:999px;
-      background: var(--chip); border:1px solid var(--border);
-      font-size:12px; color:var(--muted);
-      white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--chip);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
     }
     .dot{ width:8px; height:8px; border-radius:999px; background: rgba(15,23,42,.25); }
+    .dot.ok{ background: rgba(15,157,116,.9); }
+    .dot.off{ background: rgba(217,45,75,.9); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
     .card{
-      background: rgba(255,255,255,.9);
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
       box-shadow: var(--shadow);
       padding: 16px;
     }
-    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
-    input{
-      width:100%; padding:11px 12px; border-radius:12px;
-      border:1px solid var(--border); background:var(--input); color:var(--text);
-      outline:none;
+
+    .card h3{
+      margin:0 0 12px;
+      font-size: 15px;
+      letter-spacing: .2px;
     }
-    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    @media (max-width: 620px){ .row{ grid-template-columns: 1fr; } }
-    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 620px){
+      .row{ grid-template-columns: 1fr; }
+    }
+
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select, textarea{
+      width:100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--input);
+      color: var(--text);
+      outline: none;
+    }
+    textarea{ min-height: 92px; resize: vertical; }
+
+    select option{ color:#111; }
+    select option:disabled{ color:#888; }
+
+    .actions{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
     .btn{
-      border:1px solid var(--border);
+      border: 1px solid var(--border);
       background: #fff;
       color: var(--text);
       padding: 10px 12px;
@@ -70,85 +132,652 @@
       transition: transform .06s ease, box-shadow .15s ease;
     }
     .btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15,23,42,.08); }
+    .btn:active{ transform: translateY(0px); }
+
     .btn.primary{
       background: linear-gradient(180deg, var(--primary), var(--primary2));
       border-color: rgba(0,0,0,.05);
       color:#fff;
     }
     .btn.ghost{ background: transparent; }
-    .msg{ margin-top:10px; font-size:13px; color:var(--muted); }
-    .ok{ color: var(--ok); font-weight:800; }
-    .err{ color: var(--danger); font-weight:800; }
-    .divider{ height:1px; background: rgba(15,23,42,.08); margin: 14px 0; }
-    .small{ font-size:12px; color:var(--muted); line-height:1.4; }
+    .btn.danger{
+      background: rgba(217,45,75,.08);
+      border-color: rgba(217,45,75,.25);
+      color: var(--danger);
+    }
+
+    .msg{ margin-top: 10px; font-size: 13px; color: var(--muted); }
+    .msg .ok{ color: var(--ok); font-weight: 800; }
+    .msg .err{ color: var(--danger); font-weight: 800; }
+
+    .divider{
+      height:1px;
+      background: rgba(15,23,42,.08);
+      margin: 14px 0;
+    }
+
+    .scale{
+      display:grid;
+      gap:4px;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(15,23,42,.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin: 10px 0 14px;
+    }
+
+    .sectionTitle{
+      margin: 14px 0 4px;
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: .15px;
+    }
+    .focus{
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .question{
+      margin: 12px 0 6px;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow:hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+    }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(15,23,42,.08);
+      font-size: 12px;
+      vertical-align: top;
+    }
+    th{
+      text-align:left;
+      color: var(--muted);
+      font-weight: 900;
+      background: rgba(15,23,42,.03);
+    }
+    tr:last-child td{ border-bottom: none; }
+
+    .pill{
+      display:inline-block;
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(15,23,42,.03);
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .stickyRight .card{ position: sticky; top: 14px; }
+    @media (max-width: 980px){
+      .stickyRight .card{ position: static; }
+    }
+
+    .small{ font-size: 12px; color: var(--muted); line-height: 1.4; margin: 6px 0 0; }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="top">
+    <div class="topbar">
       <div>
-        <h1>Peer Feedback</h1>
-        <p class="sub">Login with email + PIN. One-time per assigned peer. Admin is a separate page.</p>
+        <h1>360° Feedback Survey – 2025</h1>
+        <p class="sub">
+          Rate assigned peers once. Recipients see feedback anonymously; private submissions keep rater identity for admin reporting.
+          Rating scale and questions match the Proposed Survey document. :contentReference[oaicite:3]{index=3}
+        </p>
       </div>
-      <div class="badge"><span class="dot"></span><span>PIN-only</span></div>
+      <div class="badge" id="statusBadge">
+        <span class="dot off" id="statusDot"></span>
+        <span id="statusText">Not logged in</span>
+      </div>
     </div>
 
-    <div class="card">
-      <h3 style="margin:0 0 12px;">Login</h3>
-
-      <div class="row">
-        <div>
-          <label>Email</label>
-          <input id="email" placeholder="name@company.com"/>
+    <div class="grid">
+      <!-- LEFT -->
+      <div>
+        <!-- LOGIN -->
+        <div class="card" id="loginCard">
+          <h3>Login</h3>
+          <div class="row">
+            <div>
+              <label>Your company email</label>
+              <input id="email" placeholder="name@company.com" />
+            </div>
+            <div>
+              <label>Your PIN</label>
+              <input id="pin" type="password" placeholder="PIN" />
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="loginBtn" type="button">Login</button>
+            <button class="btn ghost" id="logoutBtn" type="button" style="display:none;">Logout</button>
+            <button class="btn ghost" id="refreshBtn" type="button" style="display:none;">Refresh</button>
+          </div>
+          <div id="loginMsg" class="msg"></div>
         </div>
-        <div>
-          <label>PIN</label>
-          <input id="pin" type="password" placeholder="PIN"/>
+
+        <!-- SURVEY FORM -->
+        <div class="card" id="surveyCard" style="display:none; margin-top:14px;">
+          <h3>Survey</h3>
+
+          <label>Recipient (your allowed peers)</label>
+          <select id="recipient">
+            <option value="">Loading…</option>
+          </select>
+          <div class="small" id="recipientHint"></div>
+
+          <div class="scale">
+            <div><strong>The Rating Scale</strong></div>
+            <div>1 — Needs Significant Improvement: Rarely demonstrates this behavior. :contentReference[oaicite:4]{index=4}</div>
+            <div>2 — Improving: Sometimes demonstrates this behavior.</div>
+            <div>3 — Competent: Consistently demonstrates this behavior. :contentReference[oaicite:5]{index=5}</div>
+            <div>4 — Strong: Frequently demonstrates this behavior at a high level.</div>
+            <div>5 — Role Model: Exceptional demonstration; teaches others. :contentReference[oaicite:6]{index=6}</div>
+          </div>
+
+          <!-- Communication -->
+          <div class="sectionTitle">Communication</div>
+          <div class="focus">Focus: Clarity, active listening, and information flow :contentReference[oaicite:7]{index=7}</div>
+
+          <div class="question">Does this person communicate their ideas and expectations clearly? :contentReference[oaicite:8]{index=8}</div>
+          <select id="comm_clear"></select>
+
+          <div class="question">Do they actively listen to others without interrupting? :contentReference[oaicite:9]{index=9}</div>
+          <select id="comm_listen"></select>
+
+          <div class="question">Are they effective at keeping the team updated on their progress and potential blockers? :contentReference[oaicite:10]{index=10}</div>
+          <select id="comm_updates"></select>
+
+          <div class="question">Do they provide constructive and respectful feedback? :contentReference[oaicite:11]{index=11}</div>
+          <select id="comm_feedback"></select>
+
+          <div class="divider"></div>
+
+          <!-- Collaboration -->
+          <div class="sectionTitle">Collaboration &amp; Teamwork</div>
+          <div class="focus">Focus: Synergy, support, and conflict resolution :contentReference[oaicite:12]{index=12}</div>
+
+          <div class="question">Is this person approachable and willing to help other team members? :contentReference[oaicite:13]{index=13}</div>
+          <select id="collab_help"></select>
+
+          <div class="question">Do they contribute positively to team discussions and brainstorming sessions? :contentReference[oaicite:14]{index=14}</div>
+          <select id="collab_discuss"></select>
+
+          <div class="question">How well do they handle disagreements or conflicts within the team? :contentReference[oaicite:15]{index=15}</div>
+          <select id="collab_conflict"></select>
+
+          <div class="question">Do they prioritize team goals over personal accolades? :contentReference[oaicite:16]{index=16}</div>
+          <select id="collab_teamgoals"></select>
+
+          <div class="divider"></div>
+
+          <!-- Reliability -->
+          <div class="sectionTitle">Reliability &amp; Accountability</div>
+          <div class="focus">Focus: Ownership, timeliness, and trust :contentReference[oaicite:17]{index=17}</div>
+
+          <div class="question">Can you rely on this person to deliver high-quality work on time? :contentReference[oaicite:18]{index=18}</div>
+          <select id="rely_onTime"></select>
+
+          <div class="question">Do they take ownership of their mistakes rather than shifting blame? :contentReference[oaicite:19]{index=19}</div>
+          <select id="rely_ownership"></select>
+
+          <div class="question">Do they follow through on commitments made during meetings? :contentReference[oaicite:20]{index=20}</div>
+          <select id="rely_follow"></select>
+
+          <div class="divider"></div>
+
+          <!-- Problem Solving -->
+          <div class="sectionTitle">Problem Solving &amp; Quality of Work</div>
+          <div class="focus">Focus: Critical thinking, standard of output, and innovation :contentReference[oaicite:21]{index=21}</div>
+
+          <div class="question">Does this person provide thorough and high-quality outputs? :contentReference[oaicite:22]{index=22}</div>
+          <select id="ps_quality"></select>
+
+          <div class="question">Do they approach problems with a solution-oriented mindset? :contentReference[oaicite:23]{index=23}</div>
+          <select id="ps_solution"></select>
+
+          <div class="question">Are they able to make sound decisions even when under pressure? :contentReference[oaicite:24]{index=24}</div>
+          <select id="ps_pressure"></select>
+
+          <div class="divider"></div>
+
+          <!-- Professionalism -->
+          <div class="sectionTitle">Professionalism &amp; Integrity</div>
+          <div class="focus">Focus: Emotional intelligence, workplace ethics, cultural sensitivity, and navigation of office dynamics :contentReference[oaicite:25]{index=25}</div>
+
+          <div class="question">Does this person treat everyone with equal respect, regardless of their seniority, background, or role? :contentReference[oaicite:26]{index=26}</div>
+          <select id="prof_respect"></select>
+
+          <div class="question">When they disagree, do they do so with tact and sensitivity? :contentReference[oaicite:27]{index=27}</div>
+          <select id="prof_tact"></select>
+
+          <div class="question">Does this person avoid office gossip, negativity, or "back-channeling" (undermining others behind their back)? :contentReference[oaicite:28]{index=28}</div>
+          <select id="prof_gossip"></select>
+
+          <div class="question">Do they maintain a professional demeanor and emotional control during high-pressure situations? :contentReference[oaicite:29]{index=29}</div>
+          <select id="prof_control"></select>
+
+          <div class="question">Is this person mindful of the diverse cultural backgrounds within the team in their communication style? :contentReference[oaicite:30]{index=30}</div>
+          <select id="prof_culture"></select>
+
+          <div class="divider"></div>
+
+          <!-- Strategic -->
+          <div class="sectionTitle">Strategic Thinking &amp; Business Acumen</div>
+          <div class="focus">Focus: The "Big Picture," long-term vision, market awareness, and alignment with company goals :contentReference[oaicite:31]{index=31}</div>
+
+          <div class="question">Does this person understand how their specific tasks contribute to the wider team and company objectives? :contentReference[oaicite:32]{index=32}</div>
+          <select id="strat_objectives"></select>
+
+          <div class="question">Do they anticipate future risks and opportunities, rather than just reacting to immediate problems? :contentReference[oaicite:33]{index=33}</div>
+          <select id="strat_anticipate"></select>
+
+          <div class="question">Do they consider the cost, ROI, or resource implications of their decisions? :contentReference[oaicite:34]{index=34}</div>
+          <select id="strat_roi"></select>
+
+          <div class="question">Are they able to distinguish between what is "urgent" and what is “important” for the long-term success of the project? :contentReference[oaicite:35]{index=35}</div>
+          <select id="strat_urgent"></select>
+
+          <div class="question">Do they suggest improvements or new ideas that align with market trends or the company's strategic direction? :contentReference[oaicite:36]{index=36}</div>
+          <select id="strat_trends"></select>
+
+          <div class="divider"></div>
+
+          <!-- Qualitative -->
+          <div class="sectionTitle">Qualitative Feedback (Open-Ended)</div>
+          <div class="focus">Stop / Start / Continue :contentReference[oaicite:37]{index=37}</div>
+
+          <div class="question">Stop: What is one thing this person does that hinders the team's progress or morale? :contentReference[oaicite:38]{index=38}</div>
+          <textarea id="q_stop" placeholder="Optional…"></textarea>
+
+          <div class="question">Start: What is one thing this person should start doing to be more effective? :contentReference[oaicite:39]{index=39}</div>
+          <textarea id="q_start" placeholder="Optional…"></textarea>
+
+          <div class="question">Continue: What is this person’s &quot;superpower&quot; or greatest strength that they should keep utilizing? :contentReference[oaicite:40]{index=40}</div>
+          <textarea id="q_continue" placeholder="Optional…"></textarea>
+
+          <div class="actions">
+            <button class="btn primary" id="submitBtn" type="button">Submit</button>
+          </div>
+          <div id="submitMsg" class="msg"></div>
+          <div class="small">Already-rated peers will be disabled after submission.</div>
         </div>
       </div>
 
-      <div class="actions">
-        <button class="btn primary" id="loginBtn" type="button">Continue</button>
+      <!-- RIGHT -->
+      <div class="stickyRight">
+        <div class="card" id="myFeedbackCard" style="display:none;">
+          <h3>My feedback (anonymous)</h3>
+          <div id="mine"></div>
+          <div class="small">If you see an “index required” error, click the Firebase link and create the index once.</div>
+        </div>
       </div>
-
-      <div id="loginMsg" class="msg"></div>
-
     </div>
   </div>
 
-<script type="module">
-import {
-  $, normEmail, escapeHtml,
-  setSessionEmail, setAdminMode,
-  checkUserPin,
-  clearSessionEmail
-} from "./app.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore, doc, getDoc,
+      collection, query, where, getDocs,
+      addDoc, serverTimestamp,
+      orderBy, limit
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    /** ====== PASTE YOUR FIREBASE CONFIG HERE ====== */
+    // Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCZxIgiXvpVIA10mbAfXdelZ2GAA8Zc5jQ",
+  authDomain: "peer-feedback-4de63.firebaseapp.com",
+  projectId: "peer-feedback-4de63",
+  storageBucket: "peer-feedback-4de63.firebasestorage.app",
+  messagingSenderId: "977480782634",
+  appId: "1:977480782634:web:2bf3b786ca8ab3d8e4c453"
+};
 
 
-  // Clean start for normal users
-  clearSessionEmail();
-  setAdminMode(false);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  $("loginBtn").addEventListener("click", async () => {
-    $("loginMsg").innerHTML = "";
-    try {
-      const email = normEmail($("email").value);
-      const pin = $("pin").value.trim();
-      if (!email || !pin) throw new Error("Enter email and PIN.");
+    const $ = (id) => document.getElementById(id);
 
-      const res = await checkUserPin(email, pin);
-      if (!res.ok) throw new Error(res.error);
-
-      setSessionEmail(email);
-      setAdminMode(false);
-      window.location.href = "./rate.html";
-    } catch (e) {
-      $("loginMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
     }
-  });
+    function normEmail(email) { return String(email || "").trim().toLowerCase(); }
+    function setStatus(loggedIn, email="") {
+      const dot = $("statusDot");
+      const text = $("statusText");
+      if (loggedIn) {
+        dot.classList.remove("off"); dot.classList.add("ok");
+        text.textContent = email ? `Logged in: ${email}` : "Logged in";
+      } else {
+        dot.classList.remove("ok"); dot.classList.add("off");
+        text.textContent = "Not logged in";
+      }
+    }
 
-</script>
+    /** ====== Session ====== */
+    const KEY_EMAIL = "pf_email";
+    function setSession(email) { localStorage.setItem(KEY_EMAIL, email); }
+    function getSessionEmail() { return localStorage.getItem(KEY_EMAIL); }
+    function clearSession() { localStorage.removeItem(KEY_EMAIL); }
+
+    /** ====== PIN check ====== */
+    async function checkPin(email, pin) {
+      const ref = doc(db, "pins", email);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return { ok: false, error: "No PIN set for this email." };
+      const data = snap.data();
+      if (!data.active) return { ok: false, error: "Account is disabled." };
+      if (String(data.pin || "") !== String(pin || "")) return { ok: false, error: "Invalid PIN." };
+      return { ok: true };
+    }
+
+    /** ====== One-time rated set ====== */
+    async function getAlreadyRatedSet(raterEmail) {
+      const qy = query(collection(db, "feedback_private"), where("raterEmail", "==", raterEmail));
+      const snap = await getDocs(qy);
+      const set = new Set();
+      snap.forEach(d => {
+        const rec = normEmail(d.data().recipientEmail);
+        if (rec) set.add(rec);
+      });
+      return set;
+    }
+
+    async function getPeersForRater(raterEmail) {
+      const qy = query(collection(db, "peerMap"), where("raterEmail", "==", raterEmail));
+      const snap = await getDocs(qy);
+      return snap.docs.map(d => normEmail(d.data().peerEmail)).filter(Boolean);
+    }
+
+    /** ====== Build select options for scale ====== */
+    function fillScaleSelect(selectId) {
+      const sel = $(selectId);
+      sel.innerHTML = `
+        <option value="">Select…</option>
+        <option value="1">1 — Needs Significant Improvement</option>
+        <option value="2">2 — Improving</option>
+        <option value="3">3 — Competent</option>
+        <option value="4">4 — Strong</option>
+        <option value="5">5 — Role Model</option>
+      `;
+    }
+
+    const SCALE_SELECT_IDS = [
+      "comm_clear","comm_listen","comm_updates","comm_feedback",
+      "collab_help","collab_discuss","collab_conflict","collab_teamgoals",
+      "rely_onTime","rely_ownership","rely_follow",
+      "ps_quality","ps_solution","ps_pressure",
+      "prof_respect","prof_tact","prof_gossip","prof_control","prof_culture",
+      "strat_objectives","strat_anticipate","strat_roi","strat_urgent","strat_trends"
+    ];
+
+    function initScaleSelects() {
+      SCALE_SELECT_IDS.forEach(fillScaleSelect);
+    }
+
+    function getSelectInt(id) {
+      const v = parseInt(String($(id).value), 10);
+      return Number.isFinite(v) ? v : null;
+    }
+
+    /** ====== Load recipients and disable submitted ====== */
+    async function loadRecipients(myEmail) {
+      const [peers, ratedSet] = await Promise.all([
+        getPeersForRater(myEmail),
+        getAlreadyRatedSet(myEmail)
+      ]);
+
+      const sel = $("recipient");
+      if (!peers.length) {
+        sel.innerHTML = `<option value="">No peers assigned</option>`;
+        $("recipientHint").textContent = "";
+        return;
+      }
+
+      const options = peers.map(p => {
+        const already = ratedSet.has(p);
+        const label = already ? `${p} (submitted)` : p;
+        return `<option value="${escapeHtml(p)}" ${already ? "disabled" : ""}>${escapeHtml(label)}</option>`;
+      }).join("");
+
+      sel.innerHTML = `<option value="">Select…</option>` + options;
+
+      const left = peers.filter(p => !ratedSet.has(p)).length;
+      $("recipientHint").textContent = left === 0
+        ? "You have already submitted feedback for all assigned peers."
+        : `${left} peer(s) available to rate. Submitted peers are disabled.`;
+    }
+
+    /** ====== Render my feedback (simple list) ====== */
+    function renderMine(rows) {
+      if (!rows.length) return `<p class="small">No feedback found.</p>`;
+
+      const head = `<tr><th>Time</th><th>Recipient</th><th>Summary</th></tr>`;
+      const body = rows.map(r => {
+        const t = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : "";
+        // quick summary: average of all scored items if present
+        const scores = [];
+        for (const sec of Object.values(r.scores || {})) {
+          for (const val of Object.values(sec || {})) {
+            if (Number.isFinite(val)) scores.push(val);
+          }
+        }
+        const avg = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(2) : "—";
+        return `<tr>
+          <td>${escapeHtml(t)}</td>
+          <td><span class="pill">${escapeHtml(r.recipientEmail || "")}</span></td>
+          <td>Average score: <strong>${escapeHtml(avg)}</strong></td>
+        </tr>`;
+      }).join("");
+      return `<table>${head}${body}</table>`;
+    }
+
+    async function loadMyFeedback(myEmail) {
+      // recipientEmail + createdAt ordering may require composite index (Firebase will link it)
+      const qy = query(
+        collection(db, "feedback_public"),
+        where("recipientEmail", "==", myEmail),
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+      const snap = await getDocs(qy);
+      return snap.docs.map(d => d.data());
+    }
+
+    /** ====== Submit ====== */
+    async function submitSurvey(myEmail) {
+      const recipientEmail = normEmail($("recipient").value);
+      if (!recipientEmail) throw new Error("Select a recipient.");
+      if (recipientEmail === myEmail) throw new Error("You cannot rate yourself.");
+
+      // Validate mapping exists
+      const mapId = `${myEmail}__${recipientEmail}`;
+      const mapSnap = await getDoc(doc(db, "peerMap", mapId));
+      if (!mapSnap.exists()) throw new Error("Not allowed to rate this peer (mapping missing).");
+
+      // Validate one-time
+      const ratedSet = await getAlreadyRatedSet(myEmail);
+      if (ratedSet.has(recipientEmail)) throw new Error("You already submitted feedback for this person.");
+
+      // Collect all scores
+      const scores = {
+        communication: {
+          clearIdeas: getSelectInt("comm_clear"),
+          activeListening: getSelectInt("comm_listen"),
+          updatesBlockers: getSelectInt("comm_updates"),
+          constructiveFeedback: getSelectInt("comm_feedback"),
+        },
+        collaboration: {
+          approachableHelpful: getSelectInt("collab_help"),
+          positiveContribution: getSelectInt("collab_discuss"),
+          conflictHandling: getSelectInt("collab_conflict"),
+          teamGoalsOverAccolades: getSelectInt("collab_teamgoals"),
+        },
+        reliability: {
+          onTimeQuality: getSelectInt("rely_onTime"),
+          ownershipNoBlame: getSelectInt("rely_ownership"),
+          followThrough: getSelectInt("rely_follow"),
+        },
+        problemSolving: {
+          thoroughOutputs: getSelectInt("ps_quality"),
+          solutionMindset: getSelectInt("ps_solution"),
+          decisionsUnderPressure: getSelectInt("ps_pressure"),
+        },
+        professionalism: {
+          equalRespect: getSelectInt("prof_respect"),
+          tactSensitivity: getSelectInt("prof_tact"),
+          avoidsGossip: getSelectInt("prof_gossip"),
+          emotionalControl: getSelectInt("prof_control"),
+          culturalMindfulness: getSelectInt("prof_culture"),
+        },
+        strategic: {
+          linksToObjectives: getSelectInt("strat_objectives"),
+          anticipatesRisks: getSelectInt("strat_anticipate"),
+          considersROI: getSelectInt("strat_roi"),
+          urgentVsImportant: getSelectInt("strat_urgent"),
+          alignedIdeas: getSelectInt("strat_trends"),
+        }
+      };
+
+      // Ensure every score is filled (1-5)
+      const all = [];
+      for (const sec of Object.values(scores)) {
+        for (const v of Object.values(sec)) all.push(v);
+      }
+      if (all.some(v => v === null || v < 1 || v > 5)) {
+        throw new Error("Please answer all rating questions (1–5).");
+      }
+
+      const qualitative = {
+        stop: $("q_stop").value.trim(),
+        start: $("q_start").value.trim(),
+        continue: $("q_continue").value.trim()
+      };
+
+      const payloadPublic = {
+        recipientEmail,
+        scores,
+        qualitative,
+        createdAt: serverTimestamp()
+      };
+
+      const payloadPrivate = {
+        raterEmail: myEmail,
+        recipientEmail,
+        scores,
+        qualitative,
+        createdAt: serverTimestamp()
+      };
+
+      await addDoc(collection(db, "feedback_public"), payloadPublic);
+      await addDoc(collection(db, "feedback_private"), payloadPrivate);
+    }
+
+    /** ====== UI flow ====== */
+    function setLoggedInUI(on) {
+      $("logoutBtn").style.display = on ? "" : "none";
+      $("refreshBtn").style.display = on ? "" : "none";
+      $("surveyCard").style.display = on ? "" : "none";
+      $("myFeedbackCard").style.display = on ? "" : "none";
+    }
+
+    async function refreshAll() {
+      const email = getSessionEmail();
+      if (!email) return;
+      await loadRecipients(email);
+      const mine = await loadMyFeedback(email);
+      $("mine").innerHTML = renderMine(mine);
+    }
+
+    $("loginBtn").addEventListener("click", async () => {
+      $("loginMsg").innerHTML = "";
+      try {
+        const email = normEmail($("email").value);
+        const pin = $("pin").value.trim();
+        if (!email || !pin) throw new Error("Enter email and PIN.");
+
+        const res = await checkPin(email, pin);
+        if (!res.ok) throw new Error(res.error);
+
+        setSession(email);
+        setStatus(true, email);
+        setLoggedInUI(true);
+        $("loginMsg").innerHTML = `<span class="ok">OK.</span>`;
+
+        initScaleSelects();
+        await refreshAll();
+      } catch (e) {
+        $("loginMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+        setStatus(false);
+      }
+    });
+
+    $("logoutBtn").addEventListener("click", () => {
+      clearSession();
+      setLoggedInUI(false);
+      setStatus(false);
+      $("loginMsg").textContent = "Logged out.";
+      $("submitMsg").textContent = "";
+    });
+
+    $("refreshBtn").addEventListener("click", refreshAll);
+
+    $("submitBtn").addEventListener("click", async () => {
+      $("submitMsg").innerHTML = "";
+      try {
+        const email = getSessionEmail();
+        if (!email) throw new Error("Login first.");
+
+        await submitSurvey(email);
+
+        $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
+        $("recipient").value = "";
+
+        // reset selects
+        SCALE_SELECT_IDS.forEach(id => { $(id).value = ""; });
+
+        // keep qualitative optional; clear after submit
+        $("q_stop").value = "";
+        $("q_start").value = "";
+        $("q_continue").value = "";
+
+        await refreshAll();
+      } catch (e) {
+        $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+      }
+    });
+
+    // Auto restore session
+    (async function init() {
+      initScaleSelects();
+      const email = getSessionEmail();
+      if (email) {
+        setStatus(true, email);
+        setLoggedInUI(true);
+        $("loginMsg").innerHTML = `<span class="ok">Session restored.</span>`;
+        await refreshAll();
+      } else {
+        setStatus(false);
+        setLoggedInUI(false);
+      }
+    })();
+  </script>
 </body>
 </html>
-
-
