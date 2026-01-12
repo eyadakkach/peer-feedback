@@ -289,8 +289,8 @@
           <div class="scale">
             <div><strong>The Rating Scale (3-point)</strong></div>
             <div>1 — Needs Significant Improvement (rarely demonstrates this behavior)</div>
-            <div>2 — Competent (consistently demonstrates this behavior)</div>
-            <div>3 — Role Model (exceptional; sets the standard for others)</div>
+            <div>3 — Competent (consistently demonstrates this behavior)</div>
+            <div>5 — Role Model (exceptional; sets the standard for others)</div>
           </div>
 
           <!-- Communication -->
@@ -484,9 +484,11 @@ const firebaseConfig = {
 
   /** ====== 3-point scale ====== */
   const SCALE_OPTS = [
-    { v: 1, label: "1 — Needs Significant Improvement" },
-    { v: 2, label: "2 — Competent" },
-    { v: 3, label: "3 — Role Model" },
+    { v: 1, label: "1 | Needs Significant Improvement" },
+    { v: 2, label: "2 | Needs Improvement-Competent" },
+    { v: 3, label: "3 | Competent" },
+    { v: 4, label: "4 | Competent-Role Model" },
+    { v: 5, label: "3 | Role Model" },
   ];
 
   function fillScaleSelect(selectId) {
@@ -880,4 +882,5 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
+
 
