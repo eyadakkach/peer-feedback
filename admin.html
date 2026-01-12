@@ -14,6 +14,7 @@
       --primary:#2f6bff;
       --primary2:#2457d8;
       --danger:#d92d4b;
+      --ok:#0f9d74;
       --chip: rgba(15,23,42,.06);
       --input: rgba(15,23,42,.04);
       --card: rgba(255,255,255,.92);
@@ -28,10 +29,10 @@
         radial-gradient(800px 500px at 100% 0%, rgba(15,157,116,.10), transparent 50%),
         var(--bg);
     }
-    .wrap{ max-width: 1400px; margin: 22px auto; padding: 0 14px 40px; }
+    .wrap{ max-width: 1600px; margin: 22px auto; padding: 0 14px 40px; }
     .top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom: 12px; }
     h1{ margin:0; font-size:20px; }
-    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.45; max-width: 980px; }
+    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.45; max-width: 1100px; }
 
     .card{
       background: var(--card);
@@ -40,20 +41,46 @@
       box-shadow: var(--shadow);
       padding: 14px;
     }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap: 12px;
+      align-items:start;
+    }
+    @media (max-width: 1100px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .sectionTitle{
+      margin: 10px 0 8px;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--text);
+      letter-spacing: .2px;
+    }
+
     .bar{
       display:flex; flex-wrap:wrap; gap:10px;
       align-items:end;
       margin-bottom: 12px;
     }
     label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
-    input{
+    input, select{
       padding:10px 12px;
       border-radius: 12px;
       border:1px solid var(--border);
       background: var(--input);
-      width: 260px;
+      width: 100%;
       outline:none;
     }
+
+    .row2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
     .btn{
       border: 1px solid var(--border);
       background: #fff;
@@ -74,7 +101,16 @@
       border-color: rgba(217,45,75,.25);
       color: var(--danger);
     }
+    .btn.ghost{
+      background: transparent;
+    }
+
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+
     .msg{ margin-top: 8px; font-size: 13px; color: var(--muted); }
+    .msg .ok{ color: var(--ok); font-weight: 900; }
+    .msg .err{ color: var(--danger); font-weight: 900; }
+
     .pill{
       display:inline-block;
       padding: 2px 8px;
@@ -85,6 +121,13 @@
       color: var(--muted);
       white-space: nowrap;
     }
+
+    .divider{
+      height:1px;
+      background: rgba(15,23,42,.10);
+      margin: 12px 0;
+    }
+
     .tableWrap{
       overflow:auto;
       border: 1px solid var(--border);
@@ -92,7 +135,7 @@
       background: #fff;
     }
     table{
-      width: max(1200px, 100%);
+      width: max(1400px, 100%);
       border-collapse: collapse;
       font-size: 12px;
     }
@@ -116,6 +159,12 @@
       max-width: 560px;
     }
     .right{ text-align:right; }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -124,41 +173,94 @@
       <div>
         <h1>Admin Export (Excel-friendly)</h1>
         <p class="sub">
-          This page shows all submissions from <span class="pill">feedback_private</span> as a flat table.
+          This page reads from <span class="pill">feedback_private</span> and shows a flat table (one row per submission).
           Use <b>Copy TSV</b> to paste directly into Excel, or <b>Download CSV</b>.
-          Scale is 1–3.
+          Scale is 1–3. Mapping (who can rate who) is managed here via <span class="pill">peerMap</span>.
         </p>
       </div>
       <button class="btn danger" id="exitBtn" type="button">Exit admin</button>
     </div>
 
-    <div class="card">
-      <div class="bar">
-        <div>
-          <label>Filter recipient contains</label>
-          <input id="fRecipient" placeholder="e.g. tala@" />
+    <div class="grid">
+      <!-- LEFT: Controls -->
+      <div class="card">
+        <div class="sectionTitle">Admin controls</div>
+        <div class="hint">
+          Mapping doc id format: <span class="pill">raterEmail__peerEmail</span> (lowercased).
         </div>
-        <div>
-          <label>Filter rater contains</label>
-          <input id="fRater" placeholder="e.g. mehmet@" />
+
+        <div class="divider"></div>
+
+        <div class="sectionTitle">Create / Update Relation (who can rate who)</div>
+        <label>Rater email</label>
+        <input id="mapRater" placeholder="mehmet@company.com"/>
+
+        <label>Peer email (recipient)</label>
+        <input id="mapPeer" placeholder="tala@company.com"/>
+
+        <div class="actions">
+          <button class="btn primary" id="saveMapBtn" type="button">Save relation</button>
         </div>
-        <button class="btn" id="applyBtn" type="button">Apply filters</button>
-        <button class="btn" id="clearBtn" type="button">Clear</button>
+        <div class="msg" id="mapMsg"></div>
 
-        <span style="flex:1"></span>
+        <div class="divider"></div>
 
-        <button class="btn" id="refreshBtn" type="button">Refresh</button>
-        <button class="btn primary" id="copyTsvBtn" type="button">Copy TSV (Excel)</button>
-        <button class="btn" id="downloadCsvBtn" type="button">Download CSV</button>
+        <div class="sectionTitle">Create / Update User PIN</div>
+        <label>User email</label>
+        <input id="pinEmail" placeholder="mehmet@company.com"/>
+
+        <div class="row2">
+          <div>
+            <label>PIN</label>
+            <input id="pinValue" placeholder="e.g. 1357"/>
+          </div>
+          <div>
+            <label>Active</label>
+            <select id="pinActive">
+              <option value="true">true</option>
+              <option value="false">false</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="savePinBtn" type="button">Save PIN</button>
+        </div>
+        <div class="msg" id="pinMsg"></div>
+
+        <div class="divider"></div>
+
+        <div class="sectionTitle">Export controls</div>
+
+        <label>Filter recipient contains</label>
+        <input id="fRecipient" placeholder="e.g. tala@" />
+
+        <label>Filter rater contains</label>
+        <input id="fRater" placeholder="e.g. mehmet@" />
+
+        <div class="actions">
+          <button class="btn" id="applyBtn" type="button">Apply filters</button>
+          <button class="btn ghost" id="clearBtn" type="button">Clear</button>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="refreshBtn" type="button">Refresh</button>
+          <button class="btn primary" id="copyTsvBtn" type="button">Copy TSV (Excel)</button>
+          <button class="btn" id="downloadCsvBtn" type="button">Download CSV</button>
+        </div>
+
+        <div class="msg" id="msg"></div>
       </div>
 
-      <div class="msg" id="msg"></div>
-
-      <div class="tableWrap">
-        <table id="tbl">
-          <thead id="thead"></thead>
-          <tbody id="tbody"></tbody>
-        </table>
+      <!-- RIGHT: Table -->
+      <div class="card">
+        <div class="sectionTitle">All submissions (private)</div>
+        <div class="tableWrap">
+          <table id="tbl">
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -166,7 +268,9 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getFirestore, collection, query, orderBy, limit, getDocs
+    getFirestore,
+    doc, setDoc,
+    collection, query, orderBy, limit, getDocs
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   /** ====== ADMIN GATE (optional) ======
@@ -174,7 +278,6 @@
    */
   const isAdmin = localStorage.getItem("pf_is_admin") === "true";
   if (!isAdmin) {
-    // Change to your admin login page if you have one:
     window.location.href = "./admin-login.html";
   }
 
@@ -194,58 +297,11 @@ const firebaseConfig = {
 
   const $ = (id) => document.getElementById(id);
 
-  const QUESTIONS = [
-    // Communication
-    { key:"comm_clear", section:"Communication", label:"Communicates ideas & expectations clearly" },
-    { key:"comm_listen", section:"Communication", label:"Actively listens without interrupting" },
-    { key:"comm_updates", section:"Communication", label:"Keeps team updated on progress & blockers" },
-    { key:"comm_feedback", section:"Communication", label:"Constructive & respectful feedback" },
-
-    // Collaboration
-    { key:"collab_help", section:"Collaboration", label:"Approachable and helps others" },
-    { key:"collab_discuss", section:"Collaboration", label:"Positive contribution to discussions" },
-    { key:"collab_conflict", section:"Collaboration", label:"Handles disagreements/conflicts well" },
-    { key:"collab_teamgoals", section:"Collaboration", label:"Team goals over personal accolades" },
-
-    // Reliability
-    { key:"rely_onTime", section:"Reliability", label:"Delivers high-quality work on time" },
-    { key:"rely_ownership", section:"Reliability", label:"Owns mistakes (no blame shifting)" },
-    { key:"rely_follow", section:"Reliability", label:"Follows through on commitments" },
-
-    // Problem Solving
-    { key:"ps_quality", section:"ProblemSolving", label:"Thorough and high-quality outputs" },
-    { key:"ps_solution", section:"ProblemSolving", label:"Solution-oriented mindset" },
-    { key:"ps_pressure", section:"ProblemSolving", label:"Sound decisions under pressure" },
-
-    // Professionalism
-    { key:"prof_respect", section:"Professionalism", label:"Equal respect regardless of role/background" },
-    { key:"prof_tact", section:"Professionalism", label:"Disagrees with tact and sensitivity" },
-    { key:"prof_gossip", section:"Professionalism", label:"Avoids gossip/negativity/back-channeling" },
-    { key:"prof_control", section:"Professionalism", label:"Professional demeanor under pressure" },
-    { key:"prof_culture", section:"Professionalism", label:"Mindful of cultural diversity in communication" },
-
-    // Strategic
-    { key:"strat_objectives", section:"Strategic", label:"Understands link to objectives" },
-    { key:"strat_anticipate", section:"Strategic", label:"Anticipates risks and opportunities" },
-    { key:"strat_roi", section:"Strategic", label:"Considers cost/ROI/resources" },
-    { key:"strat_urgent", section:"Strategic", label:"Urgent vs important (long-term)" },
-    { key:"strat_trends", section:"Strategic", label:"Suggests aligned improvements/ideas" },
-  ];
-
-  const SECTION_KEYS = [
-    ["Communication","communication"],
-    ["Collaboration","collaboration"],
-    ["Reliability","reliability"],
-    ["Problem Solving","problemSolving"],
-    ["Professionalism","professionalism"],
-    ["Strategic","strategic"],
-  ];
-
-  function norm(s){ return String(s||"").trim().toLowerCase(); }
-  function safeNum(v){
-    const n = parseInt(String(v), 10);
-    return Number.isFinite(n) ? n : "";
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
   }
+  function norm(s){ return String(s || "").trim().toLowerCase(); }
+
   function formatDate(createdAt){
     try{
       if (createdAt?.toDate) return createdAt.toDate().toISOString();
@@ -268,13 +324,60 @@ const firebaseConfig = {
     return { sectionAverages, overall };
   }
 
-  // Columns in the exact order we want for Excel
+  /** ====== Authoritative mapping: section -> questions ====== */
+  const QUESTION_MAP = {
+    communication: [
+      ["comm_clear","Communicates ideas & expectations clearly"],
+      ["comm_listen","Actively listens without interrupting"],
+      ["comm_updates","Keeps team updated on progress & blockers"],
+      ["comm_feedback","Constructive & respectful feedback"],
+    ],
+    collaboration: [
+      ["collab_help","Approachable and helps others"],
+      ["collab_discuss","Positive contribution to discussions"],
+      ["collab_conflict","Handles disagreements/conflicts well"],
+      ["collab_teamgoals","Team goals over personal accolades"],
+    ],
+    reliability: [
+      ["rely_onTime","Delivers high-quality work on time"],
+      ["rely_ownership","Owns mistakes (no blame shifting)"],
+      ["rely_follow","Follows through on commitments"],
+    ],
+    problemSolving: [
+      ["ps_quality","Thorough and high-quality outputs"],
+      ["ps_solution","Solution-oriented mindset"],
+      ["ps_pressure","Sound decisions under pressure"],
+    ],
+    professionalism: [
+      ["prof_respect","Equal respect regardless of role/background"],
+      ["prof_tact","Disagrees with tact and sensitivity"],
+      ["prof_gossip","Avoids gossip/negativity/back-channeling"],
+      ["prof_control","Professional demeanor under pressure"],
+      ["prof_culture","Mindful of cultural diversity"],
+    ],
+    strategic: [
+      ["strat_objectives","Understands link to objectives"],
+      ["strat_anticipate","Anticipates risks and opportunities"],
+      ["strat_roi","Considers cost/ROI/resources"],
+      ["strat_urgent","Urgent vs important (long-term)"],
+      ["strat_trends","Suggests aligned improvements/ideas"],
+    ]
+  };
+
+  /** ====== Build question columns from mapping ====== */
+  const QUESTION_COLS = [];
+  for (const [sectionKey, arr] of Object.entries(QUESTION_MAP)){
+    for (const [qid, label] of arr){
+      QUESTION_COLS.push({ key: qid, label: `${sectionKey} — ${label}` });
+    }
+  }
+
+  /** ====== Columns in Excel order ====== */
   const COLS = [
     { key:"createdAt", label:"createdAt (ISO)" },
     { key:"raterEmail", label:"raterEmail" },
     { key:"recipientEmail", label:"recipientEmail" },
 
-    // Section averages
     { key:"avg_communication", label:"avg Communication" },
     { key:"avg_collaboration", label:"avg Collaboration" },
     { key:"avg_reliability", label:"avg Reliability" },
@@ -283,55 +386,14 @@ const firebaseConfig = {
     { key:"avg_strategic", label:"avg Strategic" },
     { key:"avg_overall", label:"avg Overall" },
 
-    // Each question score (1..3)
-    ...QUESTIONS.map(q => ({ key:q.key, label:`${q.section} — ${q.label}` })),
+    ...QUESTION_COLS,
 
-    // Qualitative
     { key:"stop", label:"Stop" },
     { key:"start", label:"Start" },
     { key:"continue", label:"Continue" },
   ];
 
-  let rawRows = [];      // raw from Firestore
-  let flatRows = [];     // flattened objects for table/export
-
-  function flattenOne(doc){
-    const scores = doc.scores || {};
-    const q = doc.qualitative || {};
-    const { sectionAverages, overall } = computeAverages(scores);
-
-    const out = {
-      createdAt: formatDate(doc.createdAt),
-      raterEmail: doc.raterEmail || "",
-      recipientEmail: doc.recipientEmail || "",
-      avg_communication: sectionAverages.communication ? sectionAverages.communication.toFixed(2) : "",
-      avg_collaboration: sectionAverages.collaboration ? sectionAverages.collaboration.toFixed(2) : "",
-      avg_reliability: sectionAverages.reliability ? sectionAverages.reliability.toFixed(2) : "",
-      avg_problemSolving: sectionAverages.problemSolving ? sectionAverages.problemSolving.toFixed(2) : "",
-      avg_professionalism: sectionAverages.professionalism ? sectionAverages.professionalism.toFixed(2) : "",
-      avg_strategic: sectionAverages.strategic ? sectionAverages.strategic.toFixed(2) : "",
-      avg_overall: overall ? overall.toFixed(2) : "",
-      stop: q.stop || "",
-      start: q.start || "",
-      continue: q.continue || "",
-    };
-
-    // Pull each score (if missing, blank)
-    for (const qq of QUESTIONS){
-      // Identify which section object holds the key
-      // (we stored as scores.communication.comm_clear etc)
-      let val = "";
-      for (const [, sectionKey] of SECTION_KEYS){
-        if (scores?.[sectionKey] && Object.prototype.hasOwnProperty.call(scores[sectionKey], qq.key)){
-          val = safeNum(scores[sectionKey][qq.key]);
-          break;
-        }
-      }
-      out[qq.key] = val;
-    }
-
-    return out;
-  }
+  let flatRows = [];
 
   function buildHeader(){
     $("thead").innerHTML = `
@@ -341,8 +403,37 @@ const firebaseConfig = {
     `;
   }
 
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
+  function flattenOne(docData){
+    const scores = docData.scores || {};
+    const q = docData.qualitative || {};
+    const { sectionAverages, overall } = computeAverages(scores);
+
+    const out = {
+      createdAt: formatDate(docData.createdAt),
+      raterEmail: docData.raterEmail || "",
+      recipientEmail: docData.recipientEmail || "",
+
+      avg_communication: sectionAverages.communication ? sectionAverages.communication.toFixed(2) : "",
+      avg_collaboration: sectionAverages.collaboration ? sectionAverages.collaboration.toFixed(2) : "",
+      avg_reliability: sectionAverages.reliability ? sectionAverages.reliability.toFixed(2) : "",
+      avg_problemSolving: sectionAverages.problemSolving ? sectionAverages.problemSolving.toFixed(2) : "",
+      avg_professionalism: sectionAverages.professionalism ? sectionAverages.professionalism.toFixed(2) : "",
+      avg_strategic: sectionAverages.strategic ? sectionAverages.strategic.toFixed(2) : "",
+      avg_overall: overall ? overall.toFixed(2) : "",
+
+      stop: q.stop || "",
+      start: q.start || "",
+      continue: q.continue || ""
+    };
+
+    // Deterministic extraction: section -> question key
+    for (const [sectionKey, arr] of Object.entries(QUESTION_MAP)) {
+      for (const [qid] of arr) {
+        out[qid] = (scores && scores[sectionKey] && (scores[sectionKey][qid] ?? "")) ?? "";
+      }
+    }
+
+    return out;
   }
 
   function renderTable(rows){
@@ -350,9 +441,9 @@ const firebaseConfig = {
       return `<tr>${
         COLS.map(c => {
           const v = r[c.key] ?? "";
-          const cls = (c.key === "stop" || c.key === "start" || c.key === "continue") ? "long" : "";
-          const align = String(c.key).startsWith("avg_") ? "right" : "";
-          return `<td class="${cls} ${align}">${escapeHtml(v)}</td>`;
+          const long = (c.key === "stop" || c.key === "start" || c.key === "continue") ? "long" : "";
+          const right = String(c.key).startsWith("avg_") ? "right" : "";
+          return `<td class="${long} ${right}">${escapeHtml(v)}</td>`;
         }).join("")
       }</tr>`;
     }).join("");
@@ -375,7 +466,9 @@ const firebaseConfig = {
 
   function toTSV(rows){
     const header = COLS.map(c => c.label).join("\t");
-    const lines = rows.map(r => COLS.map(c => String(r[c.key] ?? "").replace(/\r?\n/g, " ")).join("\t"));
+    const lines = rows.map(r =>
+      COLS.map(c => String(r[c.key] ?? "").replace(/\r?\n/g, " ")).join("\t")
+    );
     return [header, ...lines].join("\n");
   }
 
@@ -394,22 +487,56 @@ const firebaseConfig = {
     $("msg").textContent = "Loading…";
     buildHeader();
 
-    const qy = query(collection(db, "feedback_private"), orderBy("createdAt", "desc"), limit(1000));
+    const qy = query(collection(db, "feedback_private"), orderBy("createdAt", "desc"), limit(1500));
     const snap = await getDocs(qy);
-    rawRows = snap.docs.map(d => d.data());
-    flatRows = rawRows.map(flattenOne);
 
+    flatRows = snap.docs.map(d => flattenOne(d.data()));
     const shown = applyFilters();
+
     $("msg").innerHTML = `Loaded <b>${flatRows.length}</b> total row(s). Showing <b>${shown.length}</b>.`;
   }
 
+  /** ====== Admin mapping (relation) ====== */
+  $("saveMapBtn").addEventListener("click", async () => {
+    $("mapMsg").innerHTML = "";
+    try{
+      const raterEmail = norm($("mapRater").value);
+      const peerEmail = norm($("mapPeer").value);
+      if (!raterEmail || !peerEmail) throw new Error("Enter both emails.");
+
+      const id = `${raterEmail}__${peerEmail}`;
+      await setDoc(doc(db, "peerMap", id), { raterEmail, peerEmail });
+
+      $("mapMsg").innerHTML = `<span class="ok">Saved:</span> <span class="pill">${escapeHtml(id)}</span>`;
+    }catch(e){
+      $("mapMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  /** ====== Admin user PINs ====== */
+  $("savePinBtn").addEventListener("click", async () => {
+    $("pinMsg").innerHTML = "";
+    try{
+      const email = norm($("pinEmail").value);
+      const pin = String($("pinValue").value || "").trim();
+      const active = $("pinActive").value === "true";
+      if (!email || !pin) throw new Error("Enter email and PIN.");
+
+      await setDoc(doc(db, "pins", email), { pin, active });
+
+      $("pinMsg").innerHTML = `<span class="ok">Saved PIN for:</span> <span class="pill">${escapeHtml(email)}</span>`;
+    }catch(e){
+      $("pinMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+    }
+  });
+
+  /** ====== Export actions ====== */
   $("applyBtn").addEventListener("click", applyFilters);
   $("clearBtn").addEventListener("click", () => {
     $("fRater").value = "";
     $("fRecipient").value = "";
     applyFilters();
   });
-
   $("refreshBtn").addEventListener("click", refresh);
 
   $("copyTsvBtn").addEventListener("click", async () => {
