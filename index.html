@@ -525,6 +525,13 @@ const firebaseConfig = {
     "strat_objectives","strat_anticipate","strat_roi","strat_urgent","strat_trends"
   ];
 
+  function wireAvgListeners() {
+  SCALE_SELECT_IDS.forEach(id => {
+    $(id).addEventListener("change", recalcAverages);
+  });
+}
+
+
   const QUESTION_TEXT = {
     communication: [
       ["comm_clear","Does this person communicate their ideas and expectations clearly?"],
@@ -627,6 +634,47 @@ const firebaseConfig = {
       ? "You have already submitted feedback for all assigned peers."
       : `${left} peer(s) available to rate. Submitted peers are disabled.`;
   }
+
+  function avgOf(values) {
+  const vals = values.filter(v => Number.isFinite(v));
+  if (!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0) / vals.length;
+}
+
+function updateAvgUI(scores) {
+  // per section
+  const aComm  = avgOf(Object.values(scores.communication));
+  const aColl  = avgOf(Object.values(scores.collaboration));
+  const aRel   = avgOf(Object.values(scores.reliability));
+  const aPS    = avgOf(Object.values(scores.problemSolving));
+  const aProf  = avgOf(Object.values(scores.professionalism));
+  const aStrat = avgOf(Object.values(scores.strategic));
+
+  $("avg_communication").textContent   = aComm  ? aComm.toFixed(2)  : "—";
+  $("avg_collaboration").textContent   = aColl  ? aColl.toFixed(2)  : "—";
+  $("avg_reliability").textContent     = aRel   ? aRel.toFixed(2)   : "—";
+  $("avg_problemSolving").textContent  = aPS    ? aPS.toFixed(2)    : "—";
+  $("avg_professionalism").textContent = aProf  ? aProf.toFixed(2)  : "—";
+  $("avg_strategic").textContent       = aStrat ? aStrat.toFixed(2) : "—";
+
+  // overall
+  const allVals = [
+    ...Object.values(scores.communication),
+    ...Object.values(scores.collaboration),
+    ...Object.values(scores.reliability),
+    ...Object.values(scores.problemSolving),
+    ...Object.values(scores.professionalism),
+    ...Object.values(scores.strategic),
+  ];
+  const overall = avgOf(allVals);
+  $("avg_overall").textContent = overall ? overall.toFixed(2) : "—";
+}
+
+function recalcAverages() {
+  const scores = collectScores();
+  updateAvgUI(scores);
+}
+
 
   /** ====== Compute averages ====== */
   function computeAverages(scores) {
@@ -853,6 +901,8 @@ const firebaseConfig = {
       $("loginMsg").innerHTML = `<span class="ok">OK.</span>`;
 
       initScaleSelects();
+      wireAvgListeners();
+      recalcAverages();
       await refreshAll();
     } catch (e) {
       $("loginMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
@@ -882,6 +932,8 @@ const firebaseConfig = {
 
       $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
       resetForm();
+      recalcAverages();
+
       await refreshAll();
     } catch (e) {
       $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
@@ -891,6 +943,9 @@ const firebaseConfig = {
   // Auto restore session
   (async function init() {
     initScaleSelects();
+    wireAvgListeners();
+    recalcAverages();
+
     const email = getSessionEmail();
     if (email) {
       setStatus(true, email);
@@ -905,6 +960,7 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
+
 
 
 
