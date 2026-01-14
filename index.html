@@ -477,6 +477,7 @@ const firebaseConfig = {
   const db = getFirestore(app);
 
   const $ = (id) => document.getElementById(id);
+  let isSubmitting = false;
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
@@ -922,23 +923,35 @@ function recalcAverages() {
 
   $("refreshBtn").addEventListener("click", refreshAll);
 
-  $("submitBtn").addEventListener("click", async () => {
-    $("submitMsg").innerHTML = "";
-    try {
-      const email = getSessionEmail();
-      if (!email) throw new Error("Login first.");
+$("submitBtn").addEventListener("click", async () => {
+  if (isSubmitting) return;          // 🔒 block double submit
+  isSubmitting = true;
 
-      await submitSurvey(email);
+  const btn = $("submitBtn");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Submitting…";
 
-      $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
-      resetForm();
-      recalcAverages();
+  $("submitMsg").innerHTML = "";
 
-      await refreshAll();
-    } catch (e) {
-      $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
-    }
-  });
+  try {
+    const email = getSessionEmail();
+    if (!email) throw new Error("Login first.");
+
+    await submitSurvey(email);
+
+    $("submitMsg").innerHTML = `<span class="ok">Submitted.</span>`;
+    resetForm();
+    await refreshAll();
+  } catch (e) {
+    $("submitMsg").innerHTML = `<span class="err">${escapeHtml(e.message)}</span>`;
+  } finally {
+    isSubmitting = false;
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+
 
   // Auto restore session
   (async function init() {
@@ -960,6 +973,7 @@ function recalcAverages() {
 </script>
 </body>
 </html>
+
 
 
 
