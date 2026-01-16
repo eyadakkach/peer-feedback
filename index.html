@@ -444,6 +444,11 @@
       <div class="stickyRight">
         <div class="card" id="myFeedbackCard" style="display:none;">
           <h3>My feedback (anonymous)</h3>
+          <div class="small" style="margin-bottom:8px;">
+          <b>Overall average (all submissions):</b>
+          <span class="pill" id="avg_all_submissions">—</span>
+          </div>
+
           <div id="mine"></div>
           <div class="small">
             If you see “The query requires an index”, open the Firebase link shown and create the index once.
@@ -749,11 +754,26 @@ function recalcAverages() {
       </details>
     `;
   }
-
+  
   function renderMine(rows) {
-    if (!rows.length) return `<p class="small">No feedback found.</p>`;
-    return rows.map((r, i) => renderOneSubmission(r, i)).join("");
+  if (!rows.length) {
+    $("avg_all_submissions").textContent = "—";
+    return `<p class="small">No feedback found.</p>`;
   }
+
+  // calculate overall avg across all submissions
+  const avgs = rows
+    .map(r => computeAverages(r.scores || {}).overall)
+    .filter(v => Number.isFinite(v));
+
+  const overallAll =
+    avgs.length ? (avgs.reduce((a,b)=>a+b,0) / avgs.length).toFixed(2) : "—";
+
+  $("avg_all_submissions").textContent = overallAll;
+
+  return rows.map((r, i) => renderOneSubmission(r, i)).join("");
+}
+
 
   async function loadMyFeedback(myEmail) {
     // recipientEmail + createdAt ordering may require composite index
@@ -973,6 +993,7 @@ $("submitBtn").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 
 
 
