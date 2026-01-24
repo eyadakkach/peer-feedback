@@ -216,6 +216,45 @@ export async function loadAllPrivate() {
   return snap.docs.map(d => d.data());
 }
 
+
+export async function generateAISummary(myEmail, feedbackRows) {
+  const payload = {
+    input_type: "chat",
+    output_type: "chat",
+    input_value: JSON.stringify({
+      recipientEmail: myEmail,
+      scale: "1-5",
+      feedback_rows: feedbackRows
+    }),
+    session_id: crypto.randomUUID()
+  };
+
+  const res = await fetch(
+    "https://aws-us-east-2.langflow.datastax.com/lf/ddf03f01-5f13-440c-9f76-97f8c9ffe801/api/v1/run/9abec979-6c41-45e0-b98e-4d11b8ecccc4",
+    {
+      method: "POST",
+      headers: {
+        "X-DataStax-Current-Org": "983070ce-6805-4c6e-bcbb-62dd08e1fd12",
+        "Authorization": "Bearer YOUR_APPLICATION_TOKEN",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  if (!res.ok) throw new Error("AI request failed");
+
+  const data = await res.json();
+
+  const text =
+    data?.outputs?.[0]?.outputs?.[0]?.results?.message?.text;
+
+  if (!text) throw new Error("No AI output");
+
+  return JSON.parse(text);
+}
+
+
 /** ====== Admin actions ====== */
 export async function adminSavePeerMap(raterEmail, peerEmail) {
   const id = `${raterEmail}__${peerEmail}`;
@@ -226,3 +265,4 @@ export async function adminSavePeerMap(raterEmail, peerEmail) {
 export async function adminSaveUserPin(email, pin, active) {
   await setDoc(doc(db, "pins", email), { pin: String(pin), active: !!active });
 }
+
