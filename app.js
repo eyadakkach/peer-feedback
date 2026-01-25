@@ -242,7 +242,10 @@ export async function generateAISummary(myEmail, feedbackRows) {
     }
   );
 
-  if (!res.ok) throw new Error("AI request failed");
+if (!res.ok) {
+  const txt = await res.text().catch(() => "");
+  throw new Error(`AI request failed (${res.status}): ${txt.slice(0, 400)}`);
+}
 
   const data = await res.json();
 
@@ -265,4 +268,5 @@ export async function adminSavePeerMap(raterEmail, peerEmail) {
 export async function adminSaveUserPin(email, pin, active) {
   await setDoc(doc(db, "pins", email), { pin: String(pin), active: !!active });
 }
+
 
