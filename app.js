@@ -254,7 +254,26 @@ if (!res.ok) {
 
   if (!text) throw new Error("No AI output");
 
-  return JSON.parse(text);
+  function stripJsonFences(s) {
+    s = String(s || "").trim();
+  
+    // Remove ```json ... ``` or ``` ... ```
+    if (s.startsWith("```")) {
+      s = s.replace(/^```(?:json)?\s*/i, "");
+      s = s.replace(/```$/i, "").trim();
+    }
+  
+    // If the model still added text before the JSON, extract JSON body
+    const first = s.indexOf("{");
+    const last = s.lastIndexOf("}");
+    if (first !== -1 && last !== -1 && last > first) {
+      s = s.slice(first, last + 1);
+    }
+    return s.trim();
+  }
+  
+  const clean = stripJsonFences(text);
+  return JSON.parse(clean);
 }
 
 
@@ -268,6 +287,7 @@ export async function adminSavePeerMap(raterEmail, peerEmail) {
 export async function adminSaveUserPin(email, pin, active) {
   await setDoc(doc(db, "pins", email), { pin: String(pin), active: !!active });
 }
+
 
 
 
