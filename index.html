@@ -448,6 +448,16 @@
           <b>Overall average (all submissions):</b>
           <span class="pill" id="avg_all_submissions">—</span>
           </div>
+          <div class="card" style="margin-top:16px;">
+  <h3>AI feedback summary</h3>
+
+<button id="aiSummaryBtn" class="btn primary" type="button">Generate AI summary</button>
+    Generate AI summary
+  </button>
+
+  <div id="aiSummaryResult" style="margin-top:16px;"></div>
+</div>
+
 
           <div id="mine"></div>
         </div>
@@ -456,6 +466,7 @@
   </div>
 
 <script type="module">
+  import { generateAISummary } from "./app.js";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getFirestore, doc, getDoc,
@@ -770,6 +781,53 @@ function recalcAverages() {
 
   return rows.map((r, i) => renderOneSubmission(r, i)).join("");
 }
+  
+function renderAISummary(ai) {
+  // be defensive if the model returns slightly different keys
+  const strengths = ai.strengths || ai.key_strengths || [];
+  const weaknesses = ai.weaknesses || ai.key_improvement_areas || [];
+  const six = ai.six_month_plan || {};
+  const long = ai.two_to_five_year_plan || {};
+
+  return `
+    <div class="scale" style="margin-top:0;">
+      <div><strong>Overall summary</strong></div>
+      <div class="small">${escapeHtml(ai.overall_summary || "—")}</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="small"><b>Strengths</b></div>
+    <ul class="small" style="margin-top:6px;">
+      ${strengths.map(s => `<li>${escapeHtml(s)}</li>`).join("") || "<li>—</li>"}
+    </ul>
+
+    <div class="small"><b>Weaknesses</b></div>
+    <ul class="small" style="margin-top:6px;">
+      ${weaknesses.map(s => `<li>${escapeHtml(s)}</li>`).join("") || "<li>—</li>"}
+    </ul>
+
+    <div class="divider"></div>
+
+    <div class="small"><b>6-month plan</b></div>
+    <div class="small" style="margin-top:6px;">
+      <b>Focus areas:</b> ${(six.focus_areas || []).map(escapeHtml).join(", ") || "—"}
+    </div>
+    <ul class="small" style="margin-top:6px;">
+      ${(six.habits_to_build || []).map(x => `<li>${escapeHtml(x)}</li>`).join("") || "<li>—</li>"}
+    </ul>
+
+    <div class="divider"></div>
+
+    <div class="small"><b>2–5 year plan</b></div>
+    <div class="small" style="margin-top:6px;">
+      <b>North star:</b> ${escapeHtml(long.north_star || "—")}
+    </div>
+    <ul class="small" style="margin-top:6px;">
+      ${(long.capabilities_to_develop || []).map(x => `<li>${escapeHtml(x)}</li>`).join("") || "<li>—</li>"}
+    </ul>
+  `;
+}
 
 
   async function loadMyFeedback(myEmail) {
@@ -940,6 +998,34 @@ function recalcAverages() {
 
   $("refreshBtn").addEventListener("click", refreshAll);
 
+  $("aiSummaryBtn").addEventListener("click", async () => {
+  const btn = $("aiSummaryBtn");
+  const box = $("aiSummaryResult");
+
+  try {
+    btn.disabled = true;
+    btn.textContent = "Generating…";
+    box.innerHTML = "";
+
+    const myEmail = getSessionEmail();
+    if (!myEmail) throw new Error("Login first.");
+
+    // Load latest feedback (so it is always up to date)
+    const rows = await loadMyFeedback(myEmail);
+    window.__mineRows = rows; // optional cache
+
+    const ai = await generateAISummary(myEmail, rows);
+
+    box.innerHTML = renderAISummary(ai);
+  } catch (e) {
+    box.innerHTML = `<div class="msg"><span class="err">${escapeHtml(e.message)}</span></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Generate AI summary";
+  }
+});
+
+
 $("submitBtn").addEventListener("click", async () => {
   if (isSubmitting) return;          // 🔒 block double submit
   isSubmitting = true;
@@ -990,6 +1076,7 @@ $("submitBtn").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 
 
 
