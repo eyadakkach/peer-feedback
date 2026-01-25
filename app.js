@@ -235,7 +235,7 @@ export async function generateAISummary(myEmail, feedbackRows) {
       method: "POST",
       headers: {
         "X-DataStax-Current-Org": "983070ce-6805-4c6e-bcbb-62dd08e1fd12",
-        "Authorization": "Bearer YOUR_APPLICATION_TOKEN",
+        "Authorization": "AstraCS:NPZPeItZOiIQZWKXdCSurjat:3af5506c91e837f51adf51c16c309b7d246df8b3da042039ca3dcc0f7ebc2296",
         "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
@@ -268,5 +268,6 @@ export async function adminSavePeerMap(raterEmail, peerEmail) {
 export async function adminSaveUserPin(email, pin, active) {
   await setDoc(doc(db, "pins", email), { pin: String(pin), active: !!active });
 }
+
 
 
