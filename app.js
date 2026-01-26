@@ -254,26 +254,25 @@ if (!res.ok) {
 
   if (!text) throw new Error("No AI output");
 
-  function stripJsonFences(s) {
-    s = String(s || "").trim();
-  
-    // Remove ```json ... ``` or ``` ... ```
-    if (s.startsWith("```")) {
-      s = s.replace(/^```(?:json)?\s*/i, "");
-      s = s.replace(/```$/i, "").trim();
-    }
-  
-    // If the model still added text before the JSON, extract JSON body
-    const first = s.indexOf("{");
-    const last = s.lastIndexOf("}");
-    if (first !== -1 && last !== -1 && last > first) {
-      s = s.slice(first, last + 1);
-    }
-    return s.trim();
+function tryParseJson(s) {
+  // 1) first attempt
+  try { return JSON.parse(s); } catch (_) {}
+
+  // 2) remove trailing commas
+  let t = s.replace(/,\s*([}\]])/g, "$1");
+
+  // 3) if still failing, try to extract the largest JSON object
+  const first = t.indexOf("{");
+  const last = t.lastIndexOf("}");
+  if (first !== -1 && last !== -1 && last > first) {
+    t = t.slice(first, last + 1);
   }
-  
-  const clean = stripJsonFences(text);
-  return JSON.parse(clean);
+
+  // 4) second attempt
+  return JSON.parse(t);
+}
+
+  return tryParseJson(text);
 }
 
 
@@ -287,6 +286,7 @@ export async function adminSavePeerMap(raterEmail, peerEmail) {
 export async function adminSaveUserPin(email, pin, active) {
   await setDoc(doc(db, "pins", email), { pin: String(pin), active: !!active });
 }
+
 
 
 
